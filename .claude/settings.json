@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(dotnet --version)",
+      "PowerShell(git -C \"c:\\\\Users\\\\Ben\\\\source\\\\repos\\\\RS232ools\" status 2>$null)",
+      "PowerShell(if \\(-not $?\\) { \"NOT A GIT REPO\" })",
+      "PowerShell(git -C $d init)",
+      "PowerShell(git -C $d add -A)",
+      "PowerShell($d=\"c:\\\\Users\\\\Ben\\\\source\\\\repos\\\\RS232ools\")"
+    ]
+  }
+}

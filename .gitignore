@@ -1,0 +1,12 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio
+.vs/
+*.user
+
+# User-specific files
+*.suo
+*.userosscache
+*.sln.docstates
