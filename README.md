@@ -76,7 +76,6 @@ well — no ads, no tracking, no upsells, no accounts, no clutter.
 
 ## License
 
-bdh-utils apps are free and open-source software. No `LICENSE` file is currently
-present in this repository — one should be added to declare the specific licence
-that applies. See the [bdh-utils GitHub organisation](https://github.com/bdh-utils)
-for further details.
+RS232ools is free and open-source software, released under the
+[Apache License 2.0](LICENSE). See the [bdh-utils GitHub
+organisation](https://github.com/bdh-utils) for further details.
