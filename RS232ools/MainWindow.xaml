@@ -4,11 +4,25 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:RS232ools"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
-        Title="RS232ools" Height="620" Width="860"
-        MinHeight="540" MinWidth="760"
+        Title="RS232ools" Height="620" Width="920"
+        MinHeight="540" MinWidth="900"
         WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        StateChanged="Window_StateChanged"
         Background="{StaticResource BrandBg}">
+    <shell:WindowChrome.WindowChrome>
+        <!-- Borderless window that keeps Aero snap, resize and a drop shadow.
+             CaptionHeight matches the custom title bar so dragging works; the
+             window-control buttons opt back into hit-testing individually. -->
+        <shell:WindowChrome CaptionHeight="44"
+                            ResizeBorderThickness="6"
+                            CornerRadius="0"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
     <Window.Resources>
         <Style TargetType="Button">
             <Setter Property="Foreground" Value="{StaticResource BrandText}"/>
@@ -38,6 +52,34 @@
             </Setter>
         </Style>
 
+        <!-- Flat title-bar caption button. Hover colour comes from each button's
+             Tag, so the same template serves the minimise/maximise (subtle) and
+             close (red) buttons. -->
+        <Style x:Key="CaptionButton" TargetType="Button">
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource BrandText}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Arrow"/>
+            <Setter Property="Tag" Value="{StaticResource BrandSurface}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bg" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bg" Property="Background"
+                                        Value="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style TargetType="TextBlock" x:Key="Label">
             <Setter Property="Foreground" Value="{StaticResource BrandMuted}"/>
             <Setter Property="FontSize" Value="11"/>
@@ -57,175 +99,212 @@
         </Style>
     </Window.Resources>
 
-    <Grid Margin="18">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>   <!-- Title -->
-            <RowDefinition Height="Auto"/>   <!-- Connection settings -->
-            <RowDefinition Height="Auto"/>   <!-- Status bar -->
-            <RowDefinition Height="*"/>      <!-- Receive / send area -->
-            <RowDefinition Height="Auto"/>   <!-- About link -->
+            <RowDefinition Height="Auto"/>   <!-- Custom title bar -->
+            <RowDefinition Height="*"/>      <!-- App content -->
         </Grid.RowDefinitions>
 
-        <!-- Title -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,14">
-            <TextBlock Text="&#x1F50C;" FontSize="24" Foreground="{StaticResource BrandAccent}" VerticalAlignment="Center"/>
-            <TextBlock Text="RS232ools" FontSize="22" FontWeight="Bold" Foreground="{StaticResource BrandText}"
-                       VerticalAlignment="Center" Margin="10,0,0,0"/>
-            <TextBlock Text="serial terminal" FontSize="13" Foreground="{StaticResource BrandMuted}"
-                       VerticalAlignment="Bottom" Margin="10,0,0,3"/>
-        </StackPanel>
+        <!-- Custom title bar -->
+        <Grid Grid.Row="0" Height="44" Background="{StaticResource BrandBg}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-        <!-- Connection settings -->
-        <Border Grid.Row="1" Background="{StaticResource BrandSurface}" CornerRadius="8" Padding="14,12" Margin="0,0,0,12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="12"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <!-- App identity (also the draggable region) -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="16,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="&#x1F50C;" FontSize="18" Foreground="{StaticResource BrandAccent}" VerticalAlignment="Center"/>
+                <TextBlock Text="RS232ools" FontSize="15" FontWeight="Bold" Foreground="{StaticResource BrandText}"
+                           VerticalAlignment="Center" Margin="8,0,0,0"/>
+                <TextBlock Text="serial terminal" FontSize="12" Foreground="{StaticResource BrandMuted}"
+                           VerticalAlignment="Center" Margin="8,0,0,0"/>
+            </StackPanel>
+
+            <!-- Window controls -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button x:Name="MinimizeButton" Style="{StaticResource CaptionButton}"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                        Click="MinimizeButton_Click" ToolTip="Minimise">
+                    <TextBlock Text="&#xE921;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
+                </Button>
+                <Button x:Name="MaximizeButton" Style="{StaticResource CaptionButton}"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                        Click="MaximizeButton_Click" ToolTip="Maximise">
+                    <TextBlock x:Name="MaximizeGlyph" Text="&#xE922;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
+                </Button>
+                <Button x:Name="CloseButton" Style="{StaticResource CaptionButton}"
+                        shell:WindowChrome.IsHitTestVisibleInChrome="True"
+                        Click="CloseButton_Click" ToolTip="Close">
+                    <Button.Tag>
+                        <SolidColorBrush Color="#E81123"/>
+                    </Button.Tag>
+                    <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- App content -->
+        <Grid Grid.Row="1" Margin="18,8,18,18">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>   <!-- Connection settings -->
+                <RowDefinition Height="Auto"/>   <!-- Status bar -->
+                <RowDefinition Height="*"/>      <!-- Receive / send area -->
+                <RowDefinition Height="Auto"/>   <!-- About link -->
+            </Grid.RowDefinitions>
+
+            <!-- Connection settings -->
+            <Border Grid.Row="0" Background="{StaticResource BrandSurface}" CornerRadius="8" Padding="14,12" Margin="0,0,0,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Grid.Column="0">
+                        <TextBlock Text="Port" Style="{StaticResource Label}"/>
+                        <ComboBox x:Name="PortCombo" Width="100"
+                                  DropDownOpened="PortCombo_DropDownOpened"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="0" Grid.Column="2">
+                        <TextBlock Text="Baud" Style="{StaticResource Label}"/>
+                        <ComboBox x:Name="BaudCombo" Width="90"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="0" Grid.Column="4">
+                        <TextBlock Text="Data bits" Style="{StaticResource Label}"/>
+                        <ComboBox x:Name="DataBitsCombo" Width="70"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="0" Grid.Column="6">
+                        <TextBlock Text="Parity" Style="{StaticResource Label}"/>
+                        <ComboBox x:Name="ParityCombo" Width="90"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="0" Grid.Column="8">
+                        <TextBlock Text="Stop bits" Style="{StaticResource Label}"/>
+                        <ComboBox x:Name="StopBitsCombo" Width="80"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="0" Grid.Column="10">
+                        <TextBlock Text="Handshake" Style="{StaticResource Label}"/>
+                        <ComboBox x:Name="HandshakeCombo" Width="120"/>
+                    </StackPanel>
+
+                    <Button x:Name="ConnectButton" Grid.Row="0" Grid.Column="12" Content="Connect"
+                            Background="{StaticResource BrandAccent}" VerticalAlignment="Bottom"
+                            MinWidth="100" Click="ConnectButton_Click"/>
+                    <Button x:Name="DisconnectButton" Grid.Row="0" Grid.Column="14" Content="Disconnect"
+                            VerticalAlignment="Bottom" MinWidth="100" IsEnabled="False"
+                            Click="DisconnectButton_Click"/>
+                </Grid>
+            </Border>
+
+            <!-- Status bar -->
+            <Border Grid.Row="1" Background="{StaticResource BrandSurface}" CornerRadius="8" Padding="14,8" Margin="0,0,0,12">
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse x:Name="StatusDot" Width="12" Height="12" Fill="{StaticResource BrandMuted}" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="StatusText" Text="Disconnected" Foreground="{StaticResource BrandText}"
+                               FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Receive + send -->
+            <Grid Grid.Row="2">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0" Grid.Column="0">
-                    <TextBlock Text="Port" Style="{StaticResource Label}"/>
-                    <ComboBox x:Name="PortCombo" Width="100"
-                              DropDownOpened="PortCombo_DropDownOpened"/>
-                </StackPanel>
-                <StackPanel Grid.Row="0" Grid.Column="2">
-                    <TextBlock Text="Baud" Style="{StaticResource Label}"/>
-                    <ComboBox x:Name="BaudCombo" Width="90"/>
-                </StackPanel>
-                <StackPanel Grid.Row="0" Grid.Column="4">
-                    <TextBlock Text="Data bits" Style="{StaticResource Label}"/>
-                    <ComboBox x:Name="DataBitsCombo" Width="70"/>
-                </StackPanel>
-                <StackPanel Grid.Row="0" Grid.Column="6">
-                    <TextBlock Text="Parity" Style="{StaticResource Label}"/>
-                    <ComboBox x:Name="ParityCombo" Width="90"/>
-                </StackPanel>
-                <StackPanel Grid.Row="0" Grid.Column="8">
-                    <TextBlock Text="Stop bits" Style="{StaticResource Label}"/>
-                    <ComboBox x:Name="StopBitsCombo" Width="80"/>
-                </StackPanel>
-                <StackPanel Grid.Row="0" Grid.Column="10">
-                    <TextBlock Text="Handshake" Style="{StaticResource Label}"/>
-                    <ComboBox x:Name="HandshakeCombo" Width="120"/>
-                </StackPanel>
+                <!-- Receive header + controls -->
+                <Grid Grid.Row="0" Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Received" Foreground="{StaticResource BrandText}"
+                               FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <CheckBox x:Name="AutoScrollCheck" Grid.Column="2" Content="Auto-scroll" IsChecked="True"
+                              VerticalAlignment="Center"/>
+                    <CheckBox x:Name="LogCheck" Grid.Column="4" Content="Log to file" VerticalAlignment="Center"
+                              Checked="LogCheck_Checked" Unchecked="LogCheck_Unchecked"/>
+                    <Button x:Name="ClearButton" Grid.Column="6" Content="Clear" MinWidth="70"
+                            Click="ClearButton_Click"/>
+                </Grid>
 
-                <Button x:Name="ConnectButton" Grid.Row="0" Grid.Column="12" Content="Connect"
-                        Background="{StaticResource BrandAccent}" VerticalAlignment="Bottom"
-                        Width="90" Click="ConnectButton_Click"/>
-                <Button x:Name="DisconnectButton" Grid.Row="0" Grid.Column="14" Content="Disconnect"
-                        VerticalAlignment="Bottom" Width="90" IsEnabled="False"
-                        Click="DisconnectButton_Click"/>
-            </Grid>
-        </Border>
+                <!-- Receive view -->
+                <Border Grid.Row="1" Background="{StaticResource BrandSurface}" CornerRadius="8" Padding="2">
+                    <TextBox x:Name="ReceiveBox" IsReadOnly="True" Background="Transparent"
+                             Foreground="{StaticResource BrandText}" BorderThickness="0"
+                             FontFamily="Consolas" FontSize="13"
+                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                             TextWrapping="NoWrap" AcceptsReturn="True"/>
+                </Border>
 
-        <!-- Status bar -->
-        <Border Grid.Row="2" Background="{StaticResource BrandSurface}" CornerRadius="8" Padding="14,8" Margin="0,0,0,12">
-            <StackPanel Orientation="Horizontal">
-                <Ellipse x:Name="StatusDot" Width="12" Height="12" Fill="{StaticResource BrandMuted}" VerticalAlignment="Center"/>
-                <TextBlock x:Name="StatusText" Text="Disconnected" Foreground="{StaticResource BrandText}"
-                           FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Margin="10,0,0,0"/>
-            </StackPanel>
-        </Border>
+                <!-- Send row -->
+                <Grid Grid.Row="2" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox x:Name="SendBox" Grid.Column="0" Background="{StaticResource BrandSurface}"
+                             Foreground="{StaticResource BrandText}" CaretBrush="{StaticResource BrandText}"
+                             BorderThickness="0" Padding="8,7" FontFamily="Consolas" FontSize="13"
+                             VerticalContentAlignment="Center"
+                             KeyDown="SendBox_KeyDown"/>
+                    <ComboBox x:Name="LineEndingCombo" Grid.Column="2" Width="120" VerticalAlignment="Stretch"
+                              VerticalContentAlignment="Center"/>
+                    <Button x:Name="SendButton" Grid.Column="4" Content="Send" Background="{StaticResource BrandAccent}"
+                            MinWidth="90" Click="SendButton_Click" IsEnabled="False"/>
+                </Grid>
 
-        <!-- Receive + send -->
-        <Grid Grid.Row="3">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <!-- Receive header + controls -->
-            <Grid Grid.Row="0" Margin="0,0,0,6">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="Received" Foreground="{StaticResource BrandText}"
-                           FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                <CheckBox x:Name="AutoScrollCheck" Grid.Column="2" Content="Auto-scroll" IsChecked="True"
-                          VerticalAlignment="Center"/>
-                <CheckBox x:Name="LogCheck" Grid.Column="4" Content="Log to file" VerticalAlignment="Center"
-                          Checked="LogCheck_Checked" Unchecked="LogCheck_Unchecked"/>
-                <Button x:Name="ClearButton" Grid.Column="6" Content="Clear" Width="70"
-                        Click="ClearButton_Click"/>
+                <!-- File send row -->
+                <Grid Grid.Row="3" Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="ChooseFileButton" Grid.Column="0" Content="Choose file…" MinWidth="110"
+                            Click="ChooseFileButton_Click"/>
+                    <TextBlock x:Name="FilePathText" Grid.Column="2" Text="No file selected"
+                               Foreground="{StaticResource BrandMuted}" FontSize="12"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    <Button x:Name="SendFileButton" Grid.Column="4" Content="Send file" MinWidth="90"
+                            Click="SendFileButton_Click" IsEnabled="False"/>
+                </Grid>
             </Grid>
 
-            <!-- Receive view -->
-            <Border Grid.Row="1" Background="{StaticResource BrandSurface}" CornerRadius="8" Padding="2">
-                <TextBox x:Name="ReceiveBox" IsReadOnly="True" Background="Transparent"
-                         Foreground="{StaticResource BrandText}" BorderThickness="0"
-                         FontFamily="Consolas" FontSize="13"
-                         VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                         TextWrapping="NoWrap" AcceptsReturn="True"/>
-            </Border>
-
-            <!-- Send row -->
-            <Grid Grid.Row="2" Margin="0,12,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBox x:Name="SendBox" Grid.Column="0" Background="{StaticResource BrandSurface}"
-                         Foreground="{StaticResource BrandText}" CaretBrush="{StaticResource BrandText}"
-                         BorderThickness="0" Padding="8,7" FontFamily="Consolas" FontSize="13"
-                         VerticalContentAlignment="Center"
-                         KeyDown="SendBox_KeyDown"/>
-                <ComboBox x:Name="LineEndingCombo" Grid.Column="2" Width="120" VerticalAlignment="Stretch"
-                          VerticalContentAlignment="Center"/>
-                <Button x:Name="SendButton" Grid.Column="4" Content="Send" Background="{StaticResource BrandAccent}"
-                        Width="90" Click="SendButton_Click" IsEnabled="False"/>
-            </Grid>
-
-            <!-- File send row -->
-            <Grid Grid.Row="3" Margin="0,8,0,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="8"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Button x:Name="ChooseFileButton" Grid.Column="0" Content="Choose file…" Width="110"
-                        Click="ChooseFileButton_Click"/>
-                <TextBlock x:Name="FilePathText" Grid.Column="2" Text="No file selected"
-                           Foreground="{StaticResource BrandMuted}" FontSize="12"
-                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                <Button x:Name="SendFileButton" Grid.Column="4" Content="Send file" Width="90"
-                        Click="SendFileButton_Click" IsEnabled="False"/>
-            </Grid>
+            <!-- About link -->
+            <TextBlock Grid.Row="3" Margin="0,12,0,0" HorizontalAlignment="Right">
+                <Hyperlink Foreground="{StaticResource BrandAccent}" TextDecorations="None"
+                           Click="AboutLink_Click">About</Hyperlink>
+            </TextBlock>
         </Grid>
-
-        <!-- About link -->
-        <TextBlock Grid.Row="4" Margin="0,12,0,0" HorizontalAlignment="Right">
-            <Hyperlink Foreground="{StaticResource BrandAccent}" TextDecorations="None"
-                       Click="AboutLink_Click">About</Hyperlink>
-        </TextBlock>
     </Grid>
 </Window>

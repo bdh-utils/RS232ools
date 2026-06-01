@@ -1,10 +1,12 @@
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.IO;
 using System.IO.Ports;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using Microsoft.Win32;
 using RS232ools.Serial;
@@ -290,7 +292,7 @@ namespace RS232ools
         {
             var dialog = new SaveFileDialog
             {
-                Title = "Log received data to…",
+                Title = "Log received data toâ€¦",
                 Filter = "Log files (*.log)|*.log|Text files (*.txt)|*.txt|All files (*.*)|*.*",
                 FileName = $"rs232-{DateTime.Now:yyyyMMdd-HHmmss}.log",
             };
@@ -340,6 +342,119 @@ namespace RS232ools
                 _logWriter?.Dispose();
                 _logWriter = null;
             }
+        }
+
+        // ---- Custom window chrome -----------------------------------------
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+            => WindowState = WindowState.Minimized;
+
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+            => WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+        private void Window_StateChanged(object sender, EventArgs e)
+        {
+            // Swap the maximise glyph for a restore glyph (and vice versa).
+            bool maxed = WindowState == WindowState.Maximized;
+            MaximizeGlyph.Text = maxed ? "" : "";
+            MaximizeButton.ToolTip = maxed ? "Restore" : "Maximise";
+        }
+
+        protected override void OnSourceInitialized(EventArgs e)
+        {
+            base.OnSourceInitialized(e);
+
+            // With WindowStyle=None a maximised window would otherwise cover the
+            // taskbar. Hook WM_GETMINMAXINFO to clamp the maximised bounds to the
+            // monitor's working area instead.
+            var handle = new WindowInteropHelper(this).Handle;
+            HwndSource.FromHwnd(handle)?.AddHook(WindowProc);
+        }
+
+        private IntPtr WindowProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            const int WM_GETMINMAXINFO = 0x0024;
+            if (msg == WM_GETMINMAXINFO)
+            {
+                WmGetMinMaxInfo(hwnd, lParam);
+                handled = true;
+            }
+            return IntPtr.Zero;
+        }
+
+        private void WmGetMinMaxInfo(IntPtr hwnd, IntPtr lParam)
+        {
+            const int MONITOR_DEFAULTTONEAREST = 0x00000002;
+
+            var mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
+            IntPtr monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+            if (monitor != IntPtr.Zero)
+            {
+                var info = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
+                if (GetMonitorInfo(monitor, ref info))
+                {
+                    RECT work = info.rcWork;
+                    RECT bounds = info.rcMonitor;
+
+                    // Position/size of the maximised window, relative to the monitor.
+                    mmi.ptMaxPosition.X = work.Left - bounds.Left;
+                    mmi.ptMaxPosition.Y = work.Top - bounds.Top;
+                    mmi.ptMaxSize.X = work.Right - work.Left;
+                    mmi.ptMaxSize.Y = work.Bottom - work.Top;
+
+                    // Preserve the window's minimum size (in device pixels).
+                    var dpi = VisualTreeHelper.GetDpi(this);
+                    mmi.ptMinTrackSize.X = (int)(MinWidth * dpi.DpiScaleX);
+                    mmi.ptMinTrackSize.Y = (int)(MinHeight * dpi.DpiScaleY);
+                }
+            }
+
+            Marshal.StructureToPtr(mmi, lParam, fDeleteOld: true);
+        }
+
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, int flags);
+
+        [DllImport("user32.dll")]
+        private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MINMAXINFO
+        {
+            public POINT ptReserved;
+            public POINT ptMaxSize;
+            public POINT ptMaxPosition;
+            public POINT ptMinTrackSize;
+            public POINT ptMaxTrackSize;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
         }
 
         // ---- About / shutdown ---------------------------------------------
