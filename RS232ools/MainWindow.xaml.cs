@@ -28,13 +28,17 @@ namespace RS232ools
         private StreamWriter? _logWriter;
         private readonly object _logSync = new();
 
+        // A selectable send line ending. Uses properties (not ValueTuple fields)
+        // so WPF data binding can read Label for the dropdown display text.
+        private sealed record LineEndingOption(string Label, string Value);
+
         // Display options the user can pick for the send line ending.
-        private static readonly (string Label, string Value)[] LineEndings =
+        private static readonly LineEndingOption[] LineEndings =
         {
-            ("None", ""),
-            ("CR (\\r)", "\r"),
-            ("LF (\\n)", "\n"),
-            ("CR+LF (\\r\\n)", "\r\n"),
+            new("None", ""),
+            new("CR (\\r)", "\r"),
+            new("LF (\\n)", "\n"),
+            new("CR+LF (\\r\\n)", "\r\n"),
         };
 
         public MainWindow()
@@ -74,7 +78,7 @@ namespace RS232ools
             HandshakeCombo.SelectedItem = Handshake.None;
 
             LineEndingCombo.ItemsSource = LineEndings;
-            LineEndingCombo.DisplayMemberPath = nameof(ValueTuple<string, string>.Item1);
+            LineEndingCombo.DisplayMemberPath = nameof(LineEndingOption.Label);
             LineEndingCombo.SelectedIndex = 3; // CR+LF
         }
 
@@ -185,7 +189,7 @@ namespace RS232ools
         {
             if (!_serial.IsOpen) return;
 
-            string lineEnding = ((ValueTuple<string, string>)LineEndingCombo.SelectedItem).Item2;
+            string lineEnding = ((LineEndingOption)LineEndingCombo.SelectedItem).Value;
             string payload = SendBox.Text + lineEnding;
 
             try
