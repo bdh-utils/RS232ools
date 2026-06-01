@@ -13,7 +13,9 @@ AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
-OutputDir=dist\installer
+; Paths are relative to this .iss file (in packaging\), so step up to the
+; repo root where the workflow stages the exe and collects the installer.
+OutputDir=..\dist\installer
 OutputBaseFilename={#MyAppName}-{#MyAppVersion}-setup
 Compression=lzma2
 SolidCompression=yes
@@ -26,7 +28,7 @@ WizardStyle=modern
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional icons:"; Flags: unchecked
 
 [Files]
-Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
