@@ -6,7 +6,13 @@
       "PowerShell(if \\(-not $?\\) { \"NOT A GIT REPO\" })",
       "PowerShell(git -C $d init)",
       "PowerShell(git -C $d add -A)",
-      "PowerShell($d=\"c:\\\\Users\\\\Ben\\\\source\\\\repos\\\\RS232ools\")"
+      "PowerShell($d=\"c:\\\\Users\\\\Ben\\\\source\\\\repos\\\\RS232ools\")",
+      "Bash(dotnet --version)",
+      "Bash(git -C c:/Users/Ben/source/repos/RS232ools log --oneline)",
+      "Bash(git -C c:/Users/Ben/source/repos/RS232ools status --short)",
+      "Bash(dotnet build *)",
+      "Bash(git add *)",
+      "Bash(git -c 'user.name=Ben Hood' -c user.email=benhood739@gmail.com commit -q -m 'Add bdh-utils branding: theme, About window, csproj metadata, System.IO.Ports *)"
     ]
   }
 }

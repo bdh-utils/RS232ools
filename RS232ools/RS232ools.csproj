@@ -1,11 +1,22 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>RS232ools</RootNamespace>
+    <AssemblyName>RS232ools</AssemblyName>
     <UseWPF>true</UseWPF>
+    <AssemblyTitle>RS232ools</AssemblyTitle>
+    <Product>RS232ools</Product>
+    <Company>bdh-utils</Company>
+    <Version>1.0.0</Version>
+    <Copyright>© 2026 bdh-utils</Copyright>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Ports" Version="8.0.0" />
+  </ItemGroup>
 
 </Project>

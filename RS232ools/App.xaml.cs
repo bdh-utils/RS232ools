@@ -1,5 +1,3 @@
-﻿using System.Configuration;
-using System.Data;
 using System.Windows;
 
 namespace RS232ools
@@ -10,5 +8,4 @@ namespace RS232ools
     public partial class App : Application
     {
     }
-
 }
