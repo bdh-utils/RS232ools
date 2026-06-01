@@ -13,7 +13,8 @@
       "Bash(dotnet build *)",
       "Bash(git add *)",
       "Bash(git -c 'user.name=Ben Hood' -c user.email=benhood739@gmail.com commit -q -m 'Add bdh-utils branding: theme, About window, csproj metadata, System.IO.Ports *)",
-      "Bash(git -c 'user.name=Ben Hood' -c user.email=benhood739@gmail.com commit -q -m 'Add testable serial port service layer *)"
+      "Bash(git -c 'user.name=Ben Hood' -c user.email=benhood739@gmail.com commit -q -m 'Add testable serial port service layer *)",
+      "Bash(git -c 'user.name=Ben Hood' -c user.email=benhood739@gmail.com commit -q -m 'Build the full-duplex serial terminal UI *)"
     ]
   }
 }
