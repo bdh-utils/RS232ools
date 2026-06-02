@@ -41,14 +41,40 @@ namespace RS232ools.Simulation
             string trimmed = line.Trim();
             if (trimmed.Length == 0) return ParsedMessage.Fail("Line was empty.");
 
-            return format.Kind == MessageFormatKind.Nmea
-                ? ParseNmea(format, trimmed)
-                : ParseCsv(format, trimmed);
+            return format.Kind switch
+            {
+                MessageFormatKind.Nmea => ParseNmea(format, trimmed),
+                MessageFormatKind.Plain => ParsePlain(trimmed),
+                MessageFormatKind.Hex => ParseHex(format, trimmed),
+                _ => ParseCsv(format, trimmed),
+            };
         }
+
+        // CSV/NMEA treat an empty delimiter as a comma; Hex uses it as typed.
+        private static string SeparatedDelimiter(MessageFormat format)
+            => string.IsNullOrEmpty(format.Delimiter) ? "," : format.Delimiter;
 
         private static ParsedMessage ParseCsv(MessageFormat format, string line)
         {
-            string[] values = line.Split(new[] { format.Delimiter }, StringSplitOptions.None);
+            string[] values = line.Split(new[] { SeparatedDelimiter(format) }, StringSplitOptions.None);
+            return new ParsedMessage { Success = true, Values = values, ChecksumValid = null };
+        }
+
+        // No separators, so the whole line is a single value.
+        private static ParsedMessage ParsePlain(string line)
+            => new() { Success = true, Values = new[] { line }, ChecksumValid = null };
+
+        private static ParsedMessage ParseHex(MessageFormat format, string line)
+        {
+            if (!HexCodec.TryDecode(line, out string decoded))
+            {
+                return ParsedMessage.Fail("Not valid hexadecimal.");
+            }
+
+            // Recover fields if a delimiter was used; otherwise one value.
+            string[] values = string.IsNullOrEmpty(format.Delimiter)
+                ? new[] { decoded }
+                : decoded.Split(new[] { format.Delimiter }, StringSplitOptions.None);
             return new ParsedMessage { Success = true, Values = values, ChecksumValid = null };
         }
 
@@ -76,7 +102,7 @@ namespace RS232ools.Simulation
                 payload = body;
             }
 
-            string[] values = payload.Split(new[] { format.Delimiter }, StringSplitOptions.None);
+            string[] values = payload.Split(new[] { SeparatedDelimiter(format) }, StringSplitOptions.None);
             return new ParsedMessage { Success = true, Values = values, ChecksumValid = checksumValid };
         }
     }

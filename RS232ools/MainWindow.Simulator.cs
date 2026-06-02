@@ -98,11 +98,14 @@ namespace RS232ools
             _simFormat.Kind = SimFormatCombo.SelectedItem is MessageFormatKind kind
                 ? kind
                 : MessageFormatKind.Csv;
-            _simFormat.Delimiter = string.IsNullOrEmpty(SimDelimiterBox.Text) ? "," : SimDelimiterBox.Text;
+            // Delimiter is stored as typed; the generator/parser apply the comma
+            // fallback for CSV/NMEA. Plain ignores it entirely.
+            _simFormat.Delimiter = SimDelimiterBox.Text;
             _simFormat.IncludeChecksum = SimChecksumCheck.IsChecked == true;
 
-            // The checksum option only applies to NMEA.
+            // The checksum option only applies to NMEA; Plain has no separator.
             SimChecksumCheck.IsEnabled = _simFormat.Kind == MessageFormatKind.Nmea;
+            SimDelimiterBox.IsEnabled = _simFormat.Kind != MessageFormatKind.Plain;
         }
 
         // ---- Field editing ------------------------------------------------

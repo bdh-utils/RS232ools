@@ -5,11 +5,20 @@ namespace RS232ools.Simulation
     /// <summary>The wire shape of a generated/parsed message.</summary>
     public enum MessageFormatKind
     {
-        /// <summary>Plain delimiter-separated values.</summary>
+        /// <summary>Delimiter-separated values.</summary>
         Csv,
 
         /// <summary>NMEA 0183 sentence: <c>$&lt;payload&gt;*&lt;checksum&gt;</c>.</summary>
         Nmea,
+
+        /// <summary>Field values concatenated with no separator at all.</summary>
+        Plain,
+
+        /// <summary>
+        /// The payload's bytes written as space-separated uppercase hex pairs
+        /// (e.g. "48 65 6C") — a binary string represented in hexadecimal.
+        /// </summary>
+        Hex,
     }
 
     /// <summary>

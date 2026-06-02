@@ -37,20 +37,37 @@ namespace RS232ools.Simulation
                 parts.Add(GenerateValue(field));
             }
 
-            string payload = string.Join(format.Delimiter, parts);
-
-            if (format.Kind == MessageFormatKind.Nmea)
+            switch (format.Kind)
             {
-                string sentence = "$" + payload;
-                if (format.IncludeChecksum)
+                case MessageFormatKind.Nmea:
                 {
-                    sentence += "*" + NmeaChecksum.Compute(payload);
+                    string payload = string.Join(SeparatedDelimiter(format), parts);
+                    string sentence = "$" + payload;
+                    if (format.IncludeChecksum)
+                    {
+                        sentence += "*" + NmeaChecksum.Compute(payload);
+                    }
+                    return sentence;
                 }
-                return sentence;
-            }
 
-            return payload;
+                case MessageFormatKind.Plain:
+                    // Simple string with no separators at all.
+                    return string.Concat(parts);
+
+                case MessageFormatKind.Hex:
+                    // Join with the delimiter as typed (may be empty) then encode.
+                    return HexCodec.Encode(string.Join(format.Delimiter ?? string.Empty, parts));
+
+                case MessageFormatKind.Csv:
+                default:
+                    return string.Join(SeparatedDelimiter(format), parts);
+            }
         }
+
+        // CSV and NMEA are separator-based, so an empty delimiter falls back to
+        // a comma. Plain and Hex handle the delimiter themselves.
+        private static string SeparatedDelimiter(MessageFormat format)
+            => string.IsNullOrEmpty(format.Delimiter) ? "," : format.Delimiter;
 
         /// <summary>Generates the value for a single field.</summary>
         public string GenerateValue(FieldDefinition field)
