@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:RS232ools"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
-        Title="RS232ools" Height="620" Width="920"
+        Title="RS232ools" Height="720" Width="920"
         MinHeight="540" MinWidth="900"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
@@ -345,15 +345,16 @@
 
             <!-- Simulator: generate & parse customisable CSV / NMEA strings -->
             <TabItem Header="Simulator">
-            <Grid Margin="0,10,0,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <Grid Margin="0,10,2,2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>   <!-- format controls -->
                     <RowDefinition Height="Auto"/>   <!-- fields header -->
-                    <RowDefinition Height="158"/>    <!-- fields grid -->
+                    <RowDefinition Height="130"/>    <!-- fields grid -->
                     <RowDefinition Height="Auto"/>   <!-- generate / stream -->
                     <RowDefinition Height="Auto"/>   <!-- preview -->
                     <RowDefinition Height="Auto"/>   <!-- parse header -->
-                    <RowDefinition Height="*"/>      <!-- parsed table -->
+                    <RowDefinition Height="Auto"/>   <!-- parsed table -->
                 </Grid.RowDefinitions>
 
                 <!-- Format controls -->
@@ -458,8 +459,10 @@
 
                 <!-- Parsed-into-table view -->
                 <DataGrid x:Name="SimParsedGrid" Grid.Row="6" AutoGenerateColumns="True" IsReadOnly="True"
-                          CanUserAddRows="False" HeadersVisibility="Column" FontSize="12" RowHeight="22"/>
+                          CanUserAddRows="False" HeadersVisibility="Column" FontSize="12" RowHeight="22"
+                          Height="220"/>
             </Grid>
+            </ScrollViewer>
             </TabItem>
 
             </TabControl>
