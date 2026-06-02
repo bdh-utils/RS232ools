@@ -55,6 +55,7 @@ namespace RS232ools
         {
             PopulateSettingsCombos();
             RefreshPorts();
+            InitTerminalDisplay();
             InitSimulator();
             UpdateConnectionUi();
         }
@@ -198,6 +199,7 @@ namespace RS232ools
             try
             {
                 await _serial.SendAsync(payload);
+                TerminalAppendSent(payload);
                 SendBox.Clear();
             }
             catch (Exception ex) when (ex is SerialPortException or InvalidOperationException)
@@ -243,6 +245,7 @@ namespace RS232ools
             try
             {
                 await _serial.SendBytesAsync(data);
+                EchoSentFile(_selectedFilePath, data);
             }
             catch (Exception ex) when (ex is SerialPortException or InvalidOperationException)
             {
@@ -286,16 +289,9 @@ namespace RS232ools
             }));
         }
 
-        private void AppendReceived(string text)
-        {
-            ReceiveBox.AppendText(text);
-            if (AutoScrollCheck.IsChecked == true)
-            {
-                ReceiveBox.ScrollToEnd();
-            }
-        }
+        private void AppendReceived(string text) => TerminalAppendReceived(text);
 
-        private void ClearButton_Click(object sender, RoutedEventArgs e) => ReceiveBox.Clear();
+        private void ClearButton_Click(object sender, RoutedEventArgs e) => ClearTerminal();
 
         // ---- Receive logging ----------------------------------------------
 

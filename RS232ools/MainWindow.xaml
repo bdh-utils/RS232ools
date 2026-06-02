@@ -277,6 +277,10 @@
                 <Grid Grid.Row="0" Margin="0,0,0,6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="6"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="8"/>
@@ -284,23 +288,25 @@
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Received" Foreground="{StaticResource BrandText}"
+                    <TextBlock Grid.Column="0" Text="Terminal" Foreground="{StaticResource BrandText}"
                                FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    <CheckBox x:Name="AutoScrollCheck" Grid.Column="2" Content="Auto-scroll" IsChecked="True"
+                    <TextBlock Grid.Column="2" Text="Display" Style="{StaticResource Label}" VerticalAlignment="Center"/>
+                    <ComboBox x:Name="DisplayModeCombo" Grid.Column="4" Width="180" VerticalAlignment="Center"
+                              SelectionChanged="DisplayModeCombo_SelectionChanged"/>
+                    <CheckBox x:Name="AutoScrollCheck" Grid.Column="6" Content="Auto-scroll" IsChecked="True"
                               VerticalAlignment="Center"/>
-                    <CheckBox x:Name="LogCheck" Grid.Column="4" Content="Log to file" VerticalAlignment="Center"
+                    <CheckBox x:Name="LogCheck" Grid.Column="8" Content="Log to file" VerticalAlignment="Center"
                               Checked="LogCheck_Checked" Unchecked="LogCheck_Unchecked"/>
-                    <Button x:Name="ClearButton" Grid.Column="6" Content="Clear" MinWidth="70"
+                    <Button x:Name="ClearButton" Grid.Column="10" Content="Clear" MinWidth="70"
                             Click="ClearButton_Click"/>
                 </Grid>
 
-                <!-- Receive view -->
+                <!-- Terminal view (coloured TX/RX in monitor mode) -->
                 <Border Grid.Row="1" Background="{StaticResource BrandSurface}" CornerRadius="8" Padding="2">
-                    <TextBox x:Name="ReceiveBox" IsReadOnly="True" Background="Transparent"
-                             Foreground="{StaticResource BrandText}" BorderThickness="0"
-                             FontFamily="Consolas" FontSize="13"
-                             VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
-                             TextWrapping="NoWrap" AcceptsReturn="True"/>
+                    <RichTextBox x:Name="TerminalBox" IsReadOnly="True" Background="Transparent"
+                                 Foreground="{StaticResource BrandText}" BorderThickness="0"
+                                 FontFamily="Consolas" FontSize="13"
+                                 VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"/>
                 </Border>
 
                 <!-- Send row -->
