@@ -55,6 +55,7 @@ namespace RS232ools
         {
             PopulateSettingsCombos();
             RefreshPorts();
+            InitSimulator();
             UpdateConnectionUi();
         }
 
@@ -170,6 +171,8 @@ namespace RS232ools
                 StatusDot.Fill = (Brush)FindResource("BrandMuted");
                 StatusText.Text = "Disconnected";
             }
+
+            UpdateSimulatorConnectionState(open);
         }
 
         // ---- Sending ------------------------------------------------------
@@ -262,7 +265,11 @@ namespace RS232ools
         private void Serial_DataReceived(object? sender, string text)
         {
             // Raised on a background thread; marshal to the UI thread.
-            Dispatcher.BeginInvoke(new Action(() => AppendReceived(text)));
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                AppendReceived(text);
+                HandleSimulatorIncoming(text);
+            }));
             WriteToLog(text);
         }
 
@@ -471,6 +478,7 @@ namespace RS232ools
 
         protected override void OnClosing(CancelEventArgs e)
         {
+            _simStreamTimer?.Stop();
             _serial.Dispose();
             CloseLog();
             base.OnClosing(e);

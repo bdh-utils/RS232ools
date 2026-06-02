@@ -108,6 +108,33 @@
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
+
+        <!-- Dark, branded tab headers (the default theme is light). -->
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource BrandText}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="tab" Background="Transparent" Padding="16,8" Margin="0,0,4,0"
+                                CornerRadius="6,6,0,0">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="tab" Property="Background" Value="{StaticResource BrandSurface}"/>
+                                <Setter Property="Foreground" Value="{StaticResource BrandAccent}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="tab" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid>
@@ -233,8 +260,12 @@
                 </StackPanel>
             </Border>
 
-            <!-- Receive + send -->
-            <Grid Grid.Row="2">
+            <!-- Working area: Terminal + Simulator tabs -->
+            <TabControl Grid.Row="2" Background="Transparent" BorderThickness="0" Padding="0,8,0,0">
+
+            <!-- Terminal: free-form send / receive -->
+            <TabItem Header="Terminal">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
@@ -310,6 +341,128 @@
                             Click="SendFileButton_Click" IsEnabled="False"/>
                 </Grid>
             </Grid>
+            </TabItem>
+
+            <!-- Simulator: generate & parse customisable CSV / NMEA strings -->
+            <TabItem Header="Simulator">
+            <Grid Margin="0,10,0,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>   <!-- format controls -->
+                    <RowDefinition Height="Auto"/>   <!-- fields header -->
+                    <RowDefinition Height="158"/>    <!-- fields grid -->
+                    <RowDefinition Height="Auto"/>   <!-- generate / stream -->
+                    <RowDefinition Height="Auto"/>   <!-- preview -->
+                    <RowDefinition Height="Auto"/>   <!-- parse header -->
+                    <RowDefinition Height="*"/>      <!-- parsed table -->
+                </Grid.RowDefinitions>
+
+                <!-- Format controls -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal">
+                    <TextBlock Text="Format" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="SimFormatCombo" Width="90" VerticalAlignment="Center"
+                              SelectionChanged="SimFormatCombo_SelectionChanged"/>
+                    <TextBlock Text="Delimiter" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="18,0,6,0"/>
+                    <TextBox x:Name="SimDelimiterBox" Width="46" Text="," VerticalContentAlignment="Center"
+                             Padding="4,3" VerticalAlignment="Center" TextChanged="SimDelimiter_TextChanged"/>
+                    <CheckBox x:Name="SimChecksumCheck" Content="NMEA checksum" IsChecked="True" Margin="18,0,0,0"
+                              VerticalAlignment="Center" Checked="SimChecksum_Changed" Unchecked="SimChecksum_Changed"/>
+                </StackPanel>
+
+                <!-- Fields header + add/remove -->
+                <Grid Grid.Row="1" Margin="0,14,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Fields" Foreground="{StaticResource BrandText}"
+                               FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" x:Name="SimAddFieldButton" Content="Add field" MinWidth="90"
+                            Click="SimAddField_Click"/>
+                    <Button Grid.Column="4" x:Name="SimRemoveFieldButton" Content="Remove" MinWidth="80"
+                            Click="SimRemoveField_Click"/>
+                </Grid>
+
+                <!-- Field definitions -->
+                <DataGrid x:Name="SimFieldsGrid" Grid.Row="2" AutoGenerateColumns="False" CanUserAddRows="False"
+                          HeadersVisibility="Column" GridLinesVisibility="Horizontal" SelectionMode="Single"
+                          FontSize="12" RowHeight="24">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
+                        <DataGridComboBoxColumn x:Name="SimFieldTypeColumn" Header="Type"
+                                                SelectedItemBinding="{Binding Type}" Width="140"/>
+                        <DataGridTextColumn Header="Min" Binding="{Binding Min}" Width="55"/>
+                        <DataGridTextColumn Header="Max" Binding="{Binding Max}" Width="55"/>
+                        <DataGridTextColumn Header="Prec" Binding="{Binding Precision}" Width="45"/>
+                        <DataGridTextColumn Header="Fixed text" Binding="{Binding FixedValue}" Width="*"/>
+                        <DataGridTextColumn Header="Time format" Binding="{Binding TimestampFormat}" Width="95"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Generate / stream controls -->
+                <Grid Grid.Row="3" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="6"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="4"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" x:Name="SimGenerateSendButton" Content="Generate &amp; send"
+                            Background="{StaticResource BrandAccent}" MinWidth="130"
+                            Click="SimGenerateSend_Click" IsEnabled="False"/>
+                    <Button Grid.Column="2" x:Name="SimPreviewButton" Content="Preview" MinWidth="90"
+                            Click="SimPreview_Click"/>
+                    <CheckBox Grid.Column="4" x:Name="SimStreamCheck" Content="Stream every"
+                              VerticalAlignment="Center" IsEnabled="False"
+                              Checked="SimStream_Changed" Unchecked="SimStream_Changed"/>
+                    <TextBox Grid.Column="6" x:Name="SimIntervalBox" Width="64" Text="1000"
+                             VerticalContentAlignment="Center" Padding="4,3" VerticalAlignment="Center"
+                             TextChanged="SimInterval_Changed"/>
+                    <TextBlock Grid.Column="8" Text="ms" Foreground="{StaticResource BrandText}" VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Preview + sent count -->
+                <Grid Grid.Row="4" Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" x:Name="SimPreviewBox" IsReadOnly="True"
+                             Background="{StaticResource BrandSurface}" Foreground="{StaticResource BrandText}"
+                             BorderThickness="0" Padding="8,6" FontFamily="Consolas" FontSize="13"
+                             VerticalContentAlignment="Center"/>
+                    <TextBlock Grid.Column="2" x:Name="SimSentCountText" Text="0 sent"
+                               Foreground="{StaticResource BrandMuted}" FontSize="12" VerticalAlignment="Center"/>
+                </Grid>
+
+                <!-- Parse header -->
+                <Grid Grid.Row="5" Margin="0,16,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox Grid.Column="0" x:Name="SimParseCheck" Content="Parse incoming into table"
+                              VerticalAlignment="Center" Checked="SimParse_Changed" Unchecked="SimParse_Changed"/>
+                    <Button Grid.Column="2" x:Name="SimClearTableButton" Content="Clear table" MinWidth="90"
+                            Click="SimClearTable_Click"/>
+                </Grid>
+
+                <!-- Parsed-into-table view -->
+                <DataGrid x:Name="SimParsedGrid" Grid.Row="6" AutoGenerateColumns="True" IsReadOnly="True"
+                          CanUserAddRows="False" HeadersVisibility="Column" FontSize="12" RowHeight="22"/>
+            </Grid>
+            </TabItem>
+
+            </TabControl>
 
             <!-- About link -->
             <TextBlock Grid.Row="3" Margin="0,12,0,0" HorizontalAlignment="Right">
