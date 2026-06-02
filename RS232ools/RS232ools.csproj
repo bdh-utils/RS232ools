@@ -11,7 +11,9 @@
     <AssemblyTitle>RS232ools</AssemblyTitle>
     <Product>RS232ools</Product>
     <Company>bdh-utils</Company>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
     <Copyright>© 2026 bdh-utils</Copyright>
   </PropertyGroup>
 
