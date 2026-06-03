@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Globalization;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using RS232ools.Serial;
 using RS232ools.Simulation;
 
@@ -141,6 +143,88 @@ namespace RS232ools
             {
                 // A commit can throw if there is no active edit; nothing to do.
             }
+        }
+
+        // ---- Save / load config -------------------------------------------
+
+        private void SimSaveConfig_Click(object sender, RoutedEventArgs e)
+        {
+            CommitFieldEdits();
+            UpdateFormatFromUi();
+
+            var config = new SimulatorConfig
+            {
+                Kind = _simFormat.Kind,
+                Delimiter = _simFormat.Delimiter,
+                IncludeChecksum = _simFormat.IncludeChecksum,
+                StreamIntervalMs = GetIntervalMs(),
+                Fields = new List<FieldDefinition>(_simFields),
+            };
+
+            var dialog = new SaveFileDialog
+            {
+                Title = "Save simulator configuration",
+                Filter = "Simulator config (*.json)|*.json|All files (*.*)|*.*",
+                FileName = "rs232-sim-config.json",
+                DefaultExt = ".json",
+            };
+            if (dialog.ShowDialog(this) != true) return;
+
+            try
+            {
+                File.WriteAllText(dialog.FileName, SimulatorConfigCodec.Serialize(config));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                MessageBox.Show(this, $"Could not save the configuration: {ex.Message}", "Save config",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void SimLoadConfig_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Load simulator configuration",
+                Filter = "Simulator config (*.json)|*.json|All files (*.*)|*.*",
+            };
+            if (dialog.ShowDialog(this) != true) return;
+
+            SimulatorConfig config;
+            try
+            {
+                config = SimulatorConfigCodec.Deserialize(File.ReadAllText(dialog.FileName));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException)
+            {
+                MessageBox.Show(this, $"Could not load the configuration: {ex.Message}", "Load config",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            ApplyConfig(config);
+        }
+
+        private void ApplyConfig(SimulatorConfig config)
+        {
+            // Don't mutate the format out from under an active stream.
+            StopStreaming();
+
+            _simFields.Clear();
+            foreach (var field in config.Fields)
+            {
+                _simFields.Add(field ?? new FieldDefinition());
+            }
+
+            SimFormatCombo.SelectedItem = config.Kind;
+            SimDelimiterBox.Text = config.Delimiter ?? ",";
+            SimChecksumCheck.IsChecked = config.IncludeChecksum;
+            SimIntervalBox.Text = config.StreamIntervalMs.ToString(CultureInfo.InvariantCulture);
+
+            UpdateFormatFromUi();
+            UpdatePreview();
+
+            if (_simParseEnabled) RebuildParsedTable();
         }
 
         // ---- Generate / send / stream -------------------------------------

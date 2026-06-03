@@ -363,17 +363,30 @@
                     <RowDefinition Height="Auto"/>   <!-- parsed table -->
                 </Grid.RowDefinitions>
 
-                <!-- Format controls -->
-                <StackPanel Grid.Row="0" Orientation="Horizontal">
-                    <TextBlock Text="Format" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <ComboBox x:Name="SimFormatCombo" Width="90" VerticalAlignment="Center"
-                              SelectionChanged="SimFormatCombo_SelectionChanged"/>
-                    <TextBlock Text="Delimiter" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="18,0,6,0"/>
-                    <TextBox x:Name="SimDelimiterBox" Width="46" Text="," VerticalContentAlignment="Center"
-                             Padding="4,3" VerticalAlignment="Center" TextChanged="SimDelimiter_TextChanged"/>
-                    <CheckBox x:Name="SimChecksumCheck" Content="NMEA checksum" IsChecked="True" Margin="18,0,0,0"
-                              VerticalAlignment="Center" Checked="SimChecksum_Changed" Unchecked="SimChecksum_Changed"/>
-                </StackPanel>
+                <!-- Format controls + save/load -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <TextBlock Text="Format" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox x:Name="SimFormatCombo" Width="90" VerticalAlignment="Center"
+                                  SelectionChanged="SimFormatCombo_SelectionChanged"/>
+                        <TextBlock Text="Delimiter" Style="{StaticResource Label}" VerticalAlignment="Center" Margin="18,0,6,0"/>
+                        <TextBox x:Name="SimDelimiterBox" Width="46" Text="," VerticalContentAlignment="Center"
+                                 Padding="4,3" VerticalAlignment="Center" TextChanged="SimDelimiter_TextChanged"/>
+                        <CheckBox x:Name="SimChecksumCheck" Content="NMEA checksum" IsChecked="True" Margin="18,0,0,0"
+                                  VerticalAlignment="Center" Checked="SimChecksum_Changed" Unchecked="SimChecksum_Changed"/>
+                    </StackPanel>
+                    <Button Grid.Column="2" x:Name="SimSaveConfigButton" Content="Save config…" MinWidth="100"
+                            Click="SimSaveConfig_Click"/>
+                    <Button Grid.Column="4" x:Name="SimLoadConfigButton" Content="Load config…" MinWidth="100"
+                            Click="SimLoadConfig_Click"/>
+                </Grid>
 
                 <!-- Fields header + add/remove -->
                 <Grid Grid.Row="1" Margin="0,14,0,6">
