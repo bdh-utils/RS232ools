@@ -21,10 +21,23 @@ click Send, or use the file picker to select any file and stream its raw bytes
 straight to the port. A selectable line-ending option (None, CR, LF, or CR+LF,
 defaulting to CR+LF) is appended to each typed transmission.
 
-**Receiving** shows all incoming data in a scrolling monospace pane. Auto-scroll
-keeps the latest data in view; a Clear button wipes the pane. Tick "Log to file"
-at any point to write everything received from that moment onwards to a `.log` or
-`.txt` file of your choosing, in real time.
+**Display mode.** A "Display" selector at the top of the Terminal tab controls
+what appears in the pane:
+
+- **Received only** (default) — the original behaviour: only incoming data is
+  shown.
+- **Monitor (sent + received)** — echoes everything written to the port (typed
+  text and streamed file content) interleaved with everything read from it, live.
+  Each line is tagged and coloured by direction: TX lines are prefixed `TX > `
+  and shown in the brand accent colour (orange); RX lines are prefixed `RX < `
+  and shown in white. This lets you watch the full conversation — or a file
+  transfer — as it happens. When a sent file is echoed, its name and byte count
+  are shown first; display is capped at 64 KB for large files.
+
+**Receiving** shows all incoming data in a scrolling pane. Auto-scroll keeps the
+latest data in view; a Clear button wipes the pane. Tick "Log to file" at any
+point to write everything received from that moment onwards to a `.log` or `.txt`
+file of your choosing, in real time.
 
 Port settings are fully configurable before connecting: COM port (auto-detected
 and refreshed when the drop-down opens), baud rate (1200–115200), data bits
@@ -40,11 +53,19 @@ The Simulator tab generates structured serial strings and can parse incoming
 ones back into a table — useful for testing receivers, logging systems, or any
 device that speaks a regular line-based protocol.
 
-**Format.** Messages can be produced as plain **CSV** (delimiter-separated
-values, comma by default) or as **NMEA 0183** sentences. NMEA output is framed
-as `$<payload>*CS`, where `CS` is the standard XOR checksum expressed as two
-uppercase hex digits; the checksum can be toggled on or off. The field delimiter
-is editable for both formats.
+**Format.** Messages can be produced in four formats:
+
+- **CSV** — delimiter-separated values (comma by default). The delimiter is
+  editable; an empty delimiter falls back to a comma.
+- **NMEA 0183** — sentences framed as `$<payload>*CS`, where `CS` is the
+  standard XOR checksum expressed as two uppercase hex digits. The checksum can
+  be toggled on or off. The field delimiter is editable.
+- **Plain** — field values concatenated with no separator at all. The delimiter
+  box is disabled for this format.
+- **Hex** — the payload's bytes written as space-separated uppercase hex pairs
+  (e.g. `48 65 6C`). The field values are joined using the configured delimiter
+  before encoding, so the fields round-trip on parse when a delimiter is set;
+  with no delimiter the decoded text comes back as a single value.
 
 **Fields.** You define an ordered list of fields, each with a name and one of
 five types:
@@ -74,6 +95,12 @@ line split into a live table whose columns match the defined field names. For
 NMEA, a dedicated checksum column shows whether each sentence's checksum was
 valid, absent, or invalid. The table is bounded to the last 1000 rows. Click
 **Clear table** to reset it.
+
+**Save / load config.** Click **Save config…** to write the current simulator
+setup — format kind, delimiter, NMEA checksum flag, stream interval, and the
+full ordered field list — to a human-readable JSON file. Click **Load config…**
+to restore a previously saved setup from file. Loading stops any active stream
+before applying the new configuration.
 
 ## Installation
 
@@ -111,21 +138,26 @@ RS232ools\bin\Debug\net8.0-windows\RS232ools.exe
 2. Click **Connect**. The status bar turns green and shows the port name.
 3. Type a command in the send box and press Enter (or click **Send**) to
    transmit. Incoming data appears immediately in the receive pane.
-4. To send a file, click **Choose file...**, select the file, then click
-   **Send file**.
-5. To capture incoming data, tick **Log to file** and choose a destination path.
-6. Click **Disconnect** when done.
+4. To watch both sides of the conversation, select **Monitor (sent + received)**
+   from the Display selector. TX lines appear in orange; RX lines in white.
+5. To send a file, click **Choose file...**, select the file, then click
+   **Send file**. In Monitor mode, the file's content is echoed into the pane
+   alongside any responses.
+6. To capture incoming data, tick **Log to file** and choose a destination path.
+7. Click **Disconnect** when done.
 
 **Typical Simulator workflow**
 
 1. Connect to a port as above (the Simulator tab shares the same connection).
 2. Switch to the **Simulator** tab.
-3. Choose a format (CSV or NMEA) and configure the field list.
+3. Choose a format (CSV, NMEA, Plain, or Hex) and configure the field list.
 4. Click **Preview** to check the output, then **Generate & send** to transmit
    one message, or tick **Stream every** and set an interval to transmit
    continuously.
 5. To inspect incoming messages, tick **Parse incoming into table**; each line
    will appear as a row with a column per field.
+6. To save the current setup for reuse, click **Save config…** and choose a
+   location. To restore it later, click **Load config…**.
 
 ## About bdh-utils
 
