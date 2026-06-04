@@ -19,6 +19,7 @@ namespace RS232ools.Simulation
         private readonly Random _rng;
         private readonly Func<DateTime> _clock;
         private readonly Dictionary<FieldDefinition, long> _counters = new();
+        private readonly Dictionary<FieldDefinition, long> _sineSamples = new();
 
         public MessageGenerator(Random? rng = null, Func<DateTime>? clock = null)
         {
@@ -117,6 +118,26 @@ namespace RS232ools.Simulation
                         ? "HHmmss.ff"
                         : field.TimestampFormat;
                     return _clock().ToString(fmt, CultureInfo.InvariantCulture);
+                }
+
+                case FieldType.SineWave:
+                {
+                    double min = field.Min;
+                    double max = field.Max;
+                    if (max < min) (min, max) = (max, min);
+                    double period = field.Period > 0 ? field.Period : 1;
+
+                    // Advance one sample per message, like the counter.
+                    if (!_sineSamples.TryGetValue(field, out long sample)) sample = 0;
+                    _sineSamples[field] = sample + 1;
+
+                    double mid = (min + max) / 2.0;
+                    double amplitude = (max - min) / 2.0;
+                    double value = mid + (amplitude * Math.Sin(2.0 * Math.PI * (sample / period)));
+
+                    int precision = Math.Max(0, field.Precision);
+                    return Math.Round(value, precision)
+                        .ToString("F" + precision, CultureInfo.InvariantCulture);
                 }
 
                 default:

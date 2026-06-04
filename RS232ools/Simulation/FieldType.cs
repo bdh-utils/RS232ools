@@ -20,5 +20,11 @@ namespace RS232ools.Simulation
 
         /// <summary>The current time formatted with the field's TimestampFormat.</summary>
         Timestamp,
+
+        /// <summary>
+        /// A sine wave oscillating between Min and Max, advancing one sample per
+        /// message; Period is the number of messages per full cycle.
+        /// </summary>
+        SineWave,
     }
 }

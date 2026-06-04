@@ -20,8 +20,12 @@ namespace RS232ools.Simulation
         /// <summary>Upper bound for random types (inclusive).</summary>
         public double Max { get; set; } = 100;
 
-        /// <summary>Decimal places for <see cref="FieldType.RandomDecimal"/>.</summary>
+        /// <summary>Decimal places for <see cref="FieldType.RandomDecimal"/> and
+        /// <see cref="FieldType.SineWave"/>.</summary>
         public int Precision { get; set; } = 2;
+
+        /// <summary>Messages per full cycle for <see cref="FieldType.SineWave"/>.</summary>
+        public double Period { get; set; } = 20;
 
         /// <summary>The constant text for <see cref="FieldType.FixedText"/>.</summary>
         public string FixedValue { get; set; } = string.Empty;

@@ -416,6 +416,7 @@
                         <DataGridTextColumn Header="Min" Binding="{Binding Min}" Width="55"/>
                         <DataGridTextColumn Header="Max" Binding="{Binding Max}" Width="55"/>
                         <DataGridTextColumn Header="Prec" Binding="{Binding Precision}" Width="45"/>
+                        <DataGridTextColumn Header="Period" Binding="{Binding Period}" Width="55"/>
                         <DataGridTextColumn Header="Fixed text" Binding="{Binding FixedValue}" Width="*"/>
                         <DataGridTextColumn Header="Time format" Binding="{Binding TimestampFormat}" Width="95"/>
                     </DataGrid.Columns>
