@@ -317,15 +317,20 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="8"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="8"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBox x:Name="SendBox" Grid.Column="0" Background="{StaticResource BrandSurface}"
                              Foreground="{StaticResource BrandText}" CaretBrush="{StaticResource BrandText}"
                              BorderThickness="0" Padding="8,7" FontFamily="Consolas" FontSize="13"
                              VerticalContentAlignment="Center"
                              KeyDown="SendBox_KeyDown"/>
-                    <ComboBox x:Name="LineEndingCombo" Grid.Column="2" Width="120" VerticalAlignment="Stretch"
+                    <ComboBox x:Name="SendModeCombo" Grid.Column="2" Width="64" VerticalAlignment="Stretch"
+                              VerticalContentAlignment="Center" SelectionChanged="SendModeCombo_SelectionChanged"
+                              ToolTip="Text: send as typed. Hex: type byte pairs (e.g. 1A 2B FF) to send raw binary."/>
+                    <ComboBox x:Name="LineEndingCombo" Grid.Column="4" Width="120" VerticalAlignment="Stretch"
                               VerticalContentAlignment="Center"/>
-                    <Button x:Name="SendButton" Grid.Column="4" Content="Send" Background="{StaticResource BrandAccent}"
+                    <Button x:Name="SendButton" Grid.Column="6" Content="Send" Background="{StaticResource BrandAccent}"
                             MinWidth="90" Click="SendButton_Click" IsEnabled="False"/>
                 </Grid>
 

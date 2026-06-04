@@ -68,5 +68,34 @@ namespace RS232ools.Tests
             Assert.True(HexCodec.TryDecode(hex, out string back));
             Assert.Equal(original, back);
         }
+
+        [Fact]
+        public void TryDecodeToBytes_ParsesRawBytes()
+        {
+            Assert.True(HexCodec.TryDecodeToBytes("1A 2B FF 00", out byte[] bytes));
+            Assert.Equal(new byte[] { 0x1A, 0x2B, 0xFF, 0x00 }, bytes);
+        }
+
+        [Fact]
+        public void TryDecodeToBytes_Contiguous_Works()
+        {
+            Assert.True(HexCodec.TryDecodeToBytes("deadBEEF", out byte[] bytes));
+            Assert.Equal(new byte[] { 0xDE, 0xAD, 0xBE, 0xEF }, bytes);
+        }
+
+        [Fact]
+        public void TryDecodeToBytes_Empty_IsZeroBytes()
+        {
+            Assert.True(HexCodec.TryDecodeToBytes("   ", out byte[] bytes));
+            Assert.Empty(bytes);
+        }
+
+        [Fact]
+        public void TryDecodeToBytes_OddOrNonHex_Fails()
+        {
+            Assert.False(HexCodec.TryDecodeToBytes("1A2", out _));
+            Assert.False(HexCodec.TryDecodeToBytes("ZZ", out _));
+            Assert.False(HexCodec.TryDecodeToBytes(null!, out _));
+        }
     }
 }

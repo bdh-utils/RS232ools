@@ -5,11 +5,13 @@ using System.IO.Ports;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using Microsoft.Win32;
 using RS232ools.Serial;
+using RS232ools.Simulation;
 
 namespace RS232ools
 {
@@ -82,6 +84,9 @@ namespace RS232ools
             LineEndingCombo.ItemsSource = LineEndings;
             LineEndingCombo.DisplayMemberPath = nameof(LineEndingOption.Label);
             LineEndingCombo.SelectedIndex = 3; // CR+LF
+
+            SendModeCombo.ItemsSource = new[] { "Text", "Hex" };
+            SendModeCombo.SelectedIndex = 0;
         }
 
         private void RefreshPorts()
@@ -189,9 +194,27 @@ namespace RS232ools
             }
         }
 
+        private bool SendAsHex => SendModeCombo.SelectedIndex == 1;
+
+        private void SendModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Line endings are appended to text sends only; in hex mode the user
+            // includes any terminator as bytes (e.g. "0D 0A").
+            if (LineEndingCombo is not null)
+            {
+                LineEndingCombo.IsEnabled = !SendAsHex;
+            }
+        }
+
         private async System.Threading.Tasks.Task SendTypedTextAsync()
         {
             if (!_serial.IsOpen) return;
+
+            if (SendAsHex)
+            {
+                await SendTypedHexAsync();
+                return;
+            }
 
             string lineEnding = ((LineEndingOption)LineEndingCombo.SelectedItem).Value;
             string payload = SendBox.Text + lineEnding;
@@ -200,6 +223,33 @@ namespace RS232ools
             {
                 await _serial.SendAsync(payload);
                 TerminalAppendSent(payload);
+                SendBox.Clear();
+            }
+            catch (Exception ex) when (ex is SerialPortException or InvalidOperationException)
+            {
+                ReportSendError(ex);
+            }
+        }
+
+        // Parses the send box as hex byte pairs (e.g. "1A 2B FF") and transmits
+        // the raw bytes, so arbitrary binary can be sent without a file.
+        private async System.Threading.Tasks.Task SendTypedHexAsync()
+        {
+            if (string.IsNullOrWhiteSpace(SendBox.Text)) return;
+
+            if (!HexCodec.TryDecodeToBytes(SendBox.Text, out byte[] bytes))
+            {
+                MessageBox.Show(this,
+                    "Enter binary as hexadecimal byte pairs, e.g. \"1A 2B FF\" or \"1A2BFF\".",
+                    "Invalid hex", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            if (bytes.Length == 0) return;
+
+            try
+            {
+                await _serial.SendBytesAsync(bytes);
+                TerminalAppendSent(HexCodec.Encode(bytes) + "\n");
                 SendBox.Clear();
             }
             catch (Exception ex) when (ex is SerialPortException or InvalidOperationException)

@@ -15,8 +15,13 @@ namespace RS232ools.Simulation
 
         /// <summary>Encodes a string's bytes as space-separated hex pairs.</summary>
         public static string Encode(string text)
+            => Encode(ByteEncoding.GetBytes(text ?? string.Empty));
+
+        /// <summary>Encodes raw bytes as space-separated uppercase hex pairs.</summary>
+        public static string Encode(byte[] bytes)
         {
-            byte[] bytes = ByteEncoding.GetBytes(text ?? string.Empty);
+            if (bytes is null) return string.Empty;
+
             var sb = new StringBuilder(bytes.Length * 3);
             for (int i = 0; i < bytes.Length; i++)
             {
@@ -27,13 +32,13 @@ namespace RS232ools.Simulation
         }
 
         /// <summary>
-        /// Decodes hex text (whitespace between pairs is ignored) back into the
-        /// original string. Returns false for an odd digit count or non-hex
-        /// characters.
+        /// Decodes hex text (whitespace between pairs is ignored) into the raw
+        /// bytes it represents. Returns false for an odd digit count or non-hex
+        /// characters. An empty/whitespace input decodes to zero bytes.
         /// </summary>
-        public static bool TryDecode(string hex, out string text)
+        public static bool TryDecodeToBytes(string hex, out byte[] bytes)
         {
-            text = string.Empty;
+            bytes = Array.Empty<byte>();
             if (hex is null) return false;
 
             // Strip all whitespace so "48 65" and "4865" both work.
@@ -45,18 +50,34 @@ namespace RS232ools.Simulation
 
             if (digits.Length % 2 != 0) return false;
 
-            var bytes = new byte[digits.Length / 2];
-            for (int i = 0; i < bytes.Length; i++)
+            var result = new byte[digits.Length / 2];
+            for (int i = 0; i < result.Length; i++)
             {
                 if (!byte.TryParse(digits.ToString(i * 2, 2), NumberStyles.HexNumber,
-                        CultureInfo.InvariantCulture, out bytes[i]))
+                        CultureInfo.InvariantCulture, out result[i]))
                 {
                     return false;
                 }
             }
 
-            text = ByteEncoding.GetString(bytes);
+            bytes = result;
             return true;
+        }
+
+        /// <summary>
+        /// Decodes hex text back into the original string. Returns false for an
+        /// odd digit count or non-hex characters.
+        /// </summary>
+        public static bool TryDecode(string hex, out string text)
+        {
+            if (TryDecodeToBytes(hex, out byte[] bytes))
+            {
+                text = ByteEncoding.GetString(bytes);
+                return true;
+            }
+
+            text = string.Empty;
+            return false;
         }
     }
 }
