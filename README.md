@@ -68,7 +68,7 @@ device that speaks a regular line-based protocol.
   with no delimiter the decoded text comes back as a single value.
 
 **Fields.** You define an ordered list of fields, each with a name and one of
-five types:
+six types:
 
 - **Fixed text** — a constant string (e.g. a sentence identifier such as `GPGGA`).
 - **Random integer** — a whole number drawn uniformly from a configurable
@@ -79,6 +79,10 @@ five types:
   message sent.
 - **Timestamp** — the current time formatted with a configurable .NET format
   string (default `HHmmss.ff`).
+- **Sine wave** — a value that oscillates between `Min` (trough) and `Max`
+  (peak), advancing one sample per message. The wave starts at the midpoint.
+  **Period** sets the number of messages per full cycle. **Precision** controls
+  the number of decimal places, the same as for Random decimal.
 
 The same field list drives both generation and parsing, so a format round-trips
 without any separate configuration.
