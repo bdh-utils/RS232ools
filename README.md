@@ -18,8 +18,24 @@ watch incoming data appear live in the receive pane — all at the same time.
 
 **Sending** works two ways: type directly into the send box and press Enter or
 click Send, or use the file picker to select any file and stream its raw bytes
-straight to the port. A selectable line-ending option (None, CR, LF, or CR+LF,
-defaulting to CR+LF) is appended to each typed transmission.
+straight to the port.
+
+A **Text / Hex** mode selector sits next to the send box (alongside the
+line-ending selector and Send button) and controls how the typed input is
+interpreted:
+
+- **Text** (default) — the typed text is sent as-is, with the selected
+  line ending (None, CR, LF, or CR+LF, defaulting to CR+LF) appended.
+- **Hex** — the input is parsed as hexadecimal byte pairs and transmitted as
+  raw binary bytes. Spaces are optional: `1A 2B FF` and `1A2BFF` are both
+  accepted. This lets you send arbitrary binary from the keyboard without
+  needing a file — for example, to send a CRLF terminator you would type
+  `0D 0A`. The line-ending selector is disabled in Hex mode; include any
+  terminator as bytes. Invalid hex is rejected with a warning. In Monitor
+  display mode, the sent bytes are echoed in hex form.
+
+The "Send file" option is the complementary route for larger binary payloads:
+it streams any file (including `.bin`) as raw bytes directly to the port.
 
 **Display mode.** A "Display" selector at the top of the Terminal tab controls
 what appears in the pane:
@@ -144,11 +160,14 @@ RS232ools\bin\Debug\net8.0-windows\RS232ools.exe
    transmit. Incoming data appears immediately in the receive pane.
 4. To watch both sides of the conversation, select **Monitor (sent + received)**
    from the Display selector. TX lines appear in orange; RX lines in white.
-5. To send a file, click **Choose file...**, select the file, then click
+5. To send raw binary bytes from the keyboard, select **Hex** from the send mode
+   selector and type the bytes as hex pairs (e.g. `0D 0A` for CRLF). The
+   line-ending selector disables automatically; include any terminator as bytes.
+6. To send a file, click **Choose file...**, select the file, then click
    **Send file**. In Monitor mode, the file's content is echoed into the pane
    alongside any responses.
-6. To capture incoming data, tick **Log to file** and choose a destination path.
-7. Click **Disconnect** when done.
+7. To capture incoming data, tick **Log to file** and choose a destination path.
+8. Click **Disconnect** when done.
 
 **Typical Simulator workflow**
 
