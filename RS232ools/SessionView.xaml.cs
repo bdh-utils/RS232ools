@@ -76,6 +76,7 @@ namespace RS232ools
             RefreshPorts();
             InitTerminalDisplay();
             InitSimulator();
+            InitAdvanced();
             UpdateConnectionUi();
 
             PortCombo.SelectionChanged += (_, _) => SuggestedTitleChanged?.Invoke(this, EventArgs.Empty);
@@ -199,6 +200,7 @@ namespace RS232ools
             }
 
             UpdateSimulatorConnectionState(open);
+            UpdateAdvancedConnectionState(open);
         }
 
         // ---- Sending ------------------------------------------------------
@@ -342,6 +344,7 @@ namespace RS232ools
             {
                 AppendReceived(text);
                 HandleSimulatorIncoming(text);
+                HandleResponderIncoming(text);
             }));
             WriteToLog(text);
         }
