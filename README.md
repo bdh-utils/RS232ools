@@ -169,18 +169,39 @@ The **first enabled rule whose pattern matches** wins; later rules are not tried
 
 **Variables.** Each rule has an optional list of derived variables. Each variable
 has a name and an expression evaluated against the captured values (and any
-earlier derived variables in the same list). Expressions support:
+earlier derived variables in the same list). Expressions are typed: every value
+is either a number or a string, and captured tokens arrive as strings, coercing
+to numbers automatically when used in arithmetic. Expressions support:
 
 - Arithmetic: `+` `-` `*` `/` `%`
 - Comparison: `==` `!=` `<` `<=` `>` `>=`
 - Boolean logic: `&&` `||` `!`
 - Ternary: `cond ? a : b`
 - Parentheses, numeric literals, and `true` / `false` (booleans are 1 / 0)
+- String literals: `"text"` or `'text'`
+
+The `+` operator adds when both operands are numeric; otherwise it concatenates
+as text. The `==` and `!=` operators compare numerically when both sides are
+numbers, and textually (case-sensitive) when either side is a string. The
+ordering operators (`<` `<=` `>` `>=`) are always numeric.
+
+A function library is available from within expressions:
+
+| Category | Functions |
+|----------|-----------|
+| String   | `contains`, `startsWith`, `endsWith`, `indexOf`, `replace`, `substring`, `upper`, `lower`, `trim`, `len`, `concat`, `padLeft`, `padRight`, `str` |
+| Numeric  | `abs`, `round`, `floor`, `ceil`, `min`, `max`, `number` |
 
 For example, given a captured variable `raw`, you might define `scaled = raw *
 0.1` to divide it by ten, or `state = level > 50 ? 1 : 0` to produce a flag.
 The computed value is then available as `{scaled}` or `{state}` in the Reply
 template.
+
+String transformations work the same way. A rule matching `abcde[{tag}]123` with
+a variable `out = replace(tag, "req", "res")` (or equivalently
+`out = contains(tag, "req") ? "res" : tag`) and a reply of `abcde[{out}]123`
+will answer an incoming `abcde[req]123` with `abcde[res]123`. The app ships this
+as the starter "reqres" rule.
 
 **Auto-respond.** The **Auto-respond** master toggle is enabled only while the
 port is open. When turned on, every complete incoming line is run through the
