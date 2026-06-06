@@ -199,6 +199,13 @@ send failure) are also logged. A Clear button wipes the log.
 number, computes `scaled = raw * 0.1`, and replies with the scaled value. These
 demonstrate capture and arithmetic in a small, working example.
 
+**Save / load config.** Click **Save config…** to write the current responder
+setup — all rules (each with its Enabled state, Name, Regex toggle, Match
+pattern, Reply template, and derived variables) plus the selected reply line
+ending — to a human-readable JSON file. Click **Load config…** to restore a
+previously saved setup from file. Loading stops auto-respond before replacing
+the rule set and reselecting the saved reply ending.
+
 ## Installation
 
 **Prerequisites**
@@ -279,6 +286,8 @@ RS232ools\bin\Debug\net8.0-windows\RS232ools.exe
    matches a rule will receive its reply immediately. Watch the activity log to
    confirm matches and replies.
 7. Untick **Auto-respond** or click **Disconnect** to stop.
+8. To save the current rule set for reuse, click **Save config…** and choose a
+   location. To restore it later, click **Load config…**.
 
 ## About bdh-utils
 
