@@ -2,22 +2,23 @@
 
 A Windows serial terminal for sending and receiving data over RS232 COM ports,
 with a built-in message simulator for generating and parsing structured serial
-strings.
+strings, and a rule-based device responder for simulating command/response
+devices.
 
 ## What it does
 
 RS232ools works with **multiple serial sessions at once**. Each session lives in
 its own tab, owns its own COM port and serial settings, and contains a
-**Terminal** and a **Simulator** that share that session's connection. So you can
-drive several ports side by side in one window — for example, a terminal on one
-device and a simulator feeding another.
+**Terminal**, a **Simulator**, and an **Advanced** responder that all share that
+session's connection. So you can drive several ports side by side in one window —
+for example, a terminal on one device and a rule-based responder feeding another.
 
 ### Session tabs
 
 Each tab across the top of the window is an independent serial **session**.
-Inside a session you set the COM port and framing, connect, and use its Terminal
-and Simulator sub-tabs — exactly as described below — against that session's own
-port.
+Inside a session you set the COM port and framing, connect, and use its Terminal,
+Simulator, and Advanced sub-tabs — exactly as described below — against that
+session's own port.
 
 - **New tab** (in the title bar) opens another session, so you can connect to a
   different COM port without closing the first. Each session connects,
@@ -141,6 +142,63 @@ full ordered field list — to a human-readable JSON file. Click **Load config�
 to restore a previously saved setup from file. Loading stops any active stream
 before applying the new configuration.
 
+### Advanced
+
+The Advanced tab is a rule-based device responder. Where the Simulator generates
+fixed-structure messages on a timer, the Advanced tab listens and replies: each
+incoming command is matched against a list of rules, and the matching rule's reply
+is sent back automatically. This makes it possible to simulate a device that
+responds differently depending on what it receives.
+
+**Rules.** You define an ordered list of rules. Each rule has:
+
+- **Enabled** — a toggle to activate or deactivate the rule without deleting it.
+- **Name** — a label used in the activity log.
+- **Match (RX)** — the pattern to match against incoming lines. By default this is
+  a `{placeholder}` template: literal text must match literally, and each
+  `{name}` captures a token from the corresponding position (e.g. `READ {raw}`
+  matches the line `READ 100` and captures `raw = 100`). The whole line must
+  match. Tick a rule's **Regex** toggle to treat the pattern as a raw regular
+  expression with named capture groups instead.
+- **Reply (TX)** — the template sent back when the rule matches. Any `{name}`
+  placeholder in the template is replaced with the captured or derived value of
+  that name (e.g. `VAL={scaled}` becomes `VAL=10` if `scaled` has been computed
+  as 10).
+
+The **first enabled rule whose pattern matches** wins; later rules are not tried.
+
+**Variables.** Each rule has an optional list of derived variables. Each variable
+has a name and an expression evaluated against the captured values (and any
+earlier derived variables in the same list). Expressions support:
+
+- Arithmetic: `+` `-` `*` `/` `%`
+- Comparison: `==` `!=` `<` `<=` `>` `>=`
+- Boolean logic: `&&` `||` `!`
+- Ternary: `cond ? a : b`
+- Parentheses, numeric literals, and `true` / `false` (booleans are 1 / 0)
+
+For example, given a captured variable `raw`, you might define `scaled = raw *
+0.1` to divide it by ten, or `state = level > 50 ? 1 : 0` to produce a flag.
+The computed value is then available as `{scaled}` or `{state}` in the Reply
+template.
+
+**Auto-respond.** The **Auto-respond** master toggle is enabled only while the
+port is open. When turned on, every complete incoming line is run through the
+rules: if a rule matches, its reply (plus the configured **Reply ending** —
+None, CR, LF, or CR+LF, defaulting to CR+LF) is sent immediately. Lines that
+match no rule are silently ignored. Any rule or expression error is reported in
+the log without stopping the responder.
+
+**Activity log.** Each match produces a timestamped log entry showing the
+received line, the matched rule name, and the transmitted reply — for example,
+`RX READ 100  ->  [scale]  TX VAL=10`. Errors (bad pattern, bad expression,
+send failure) are also logged. A Clear button wipes the log.
+
+**Starter rules.** The tab opens with two example rules pre-loaded: a simple
+`PING` → `PONG` echo, and a `READ {raw}` → `VAL={scaled}` rule that captures a
+number, computes `scaled = raw * 0.1`, and replies with the scaled value. These
+demonstrate capture and arithmetic in a small, working example.
+
 ## Installation
 
 **Prerequisites**
@@ -203,6 +261,24 @@ RS232ools\bin\Debug\net8.0-windows\RS232ools.exe
    will appear as a row with a column per field.
 6. To save the current setup for reuse, click **Save config…** and choose a
    location. To restore it later, click **Load config…**.
+
+**Typical Advanced workflow**
+
+1. Connect to a port as above (the Advanced tab shares its session's connection).
+2. Switch to the **Advanced** sub-tab.
+3. Review the two starter rules or click **Add rule** to create your own. For
+   each rule, set the Name, Match pattern, and Reply template. Use
+   `{placeholder}` syntax in the Match pattern to capture tokens by name.
+4. To derive new values from the captures, select a rule and click **Add
+   variable** in the Variables panel. Give the variable a name and an expression
+   (e.g. `raw * 0.1`). The variable's name can then be used as a `{placeholder}`
+   in the rule's Reply template.
+5. Set the **Reply ending** to match what the receiving device expects (usually
+   CR+LF).
+6. Tick **Auto-respond**. The responder is now active: each incoming line that
+   matches a rule will receive its reply immediately. Watch the activity log to
+   confirm matches and replies.
+7. Untick **Auto-respond** or click **Disconnect** to stop.
 
 ## About bdh-utils
 
