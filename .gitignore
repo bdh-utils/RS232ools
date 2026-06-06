@@ -10,3 +10,7 @@
 *.suo
 *.userosscache
 *.sln.docstates
+
+# Claude Code / agent files
+.claude/
+memory/
