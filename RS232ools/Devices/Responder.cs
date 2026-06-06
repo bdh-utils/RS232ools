@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace RS232ools.Devices
@@ -63,14 +62,12 @@ namespace RS232ools.Devices
 
                 if (captures is null) continue;
 
-                // Numeric view of the captures for expression evaluation.
-                var numbers = new Dictionary<string, double>();
+                // Captured values seed the variable set as text; numeric-looking
+                // ones still coerce to numbers inside expressions when needed.
+                var variables = new Dictionary<string, ExprValue>();
                 foreach (var kv in captures)
                 {
-                    if (double.TryParse(kv.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double n))
-                    {
-                        numbers[kv.Key] = n;
-                    }
+                    variables[kv.Key] = ExprValue.Text(kv.Value);
                 }
 
                 // String view for template substitution (captures + derived).
@@ -81,9 +78,9 @@ namespace RS232ools.Devices
                     foreach (var variable in rule.Variables)
                     {
                         if (variable is null || string.IsNullOrWhiteSpace(variable.Name)) continue;
-                        double value = ExpressionEvaluator.Evaluate(variable.Expression, numbers);
-                        numbers[variable.Name] = value;
-                        substitutions[variable.Name] = FormatNumber(value);
+                        ExprValue value = ExpressionEvaluator.EvaluateValue(variable.Expression, variables);
+                        variables[variable.Name] = value;
+                        substitutions[variable.Name] = value.AsText();
                     }
                 }
                 catch (ExpressionException ex)
@@ -98,18 +95,7 @@ namespace RS232ools.Devices
         }
 
         /// <summary>Formats a result: whole numbers without a decimal point.</summary>
-        public static string FormatNumber(double value)
-        {
-            if (double.IsNaN(value) || double.IsInfinity(value))
-            {
-                return value.ToString(CultureInfo.InvariantCulture);
-            }
-            if (value == Math.Floor(value) && Math.Abs(value) < 1e15)
-            {
-                return ((long)value).ToString(CultureInfo.InvariantCulture);
-            }
-            return value.ToString("0.######", CultureInfo.InvariantCulture);
-        }
+        public static string FormatNumber(double value) => ExprValue.FormatNumber(value);
 
         private static string Substitute(string template, IReadOnlyDictionary<string, string> values)
             => Placeholder.Replace(template, m =>

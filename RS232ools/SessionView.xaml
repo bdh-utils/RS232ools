@@ -408,6 +408,17 @@
             <DataGrid x:Name="AdvVarsGrid" Grid.Row="4" AutoGenerateColumns="False" CanUserAddRows="False"
                       HeadersVisibility="Column" GridLinesVisibility="Horizontal" SelectionMode="Single"
                       FontSize="12" RowHeight="24">
+                <DataGrid.ToolTip>
+                    <TextBlock>
+                        Expressions over captured variables. Numbers and strings.<LineBreak/>
+                        Operators: + - * / %, == != &lt; &lt;= &gt; &gt;=, &amp;&amp; || !, cond ? a : b<LineBreak/>
+                        Strings: "literal" or 'literal'; + joins text when not both numeric.<LineBreak/>
+                        Functions: contains, startsWith, endsWith, indexOf, replace, substring,<LineBreak/>
+                        upper, lower, trim, len, concat, padLeft, padRight, str, number,<LineBreak/>
+                        abs, round, floor, ceil, min, max.<LineBreak/>
+                        e.g. out = contains(tag, "req") ? "res" : tag
+                    </TextBlock>
+                </DataGrid.ToolTip>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Variable" Binding="{Binding Name}" Width="160"/>
                     <DataGridTextColumn Header="Expression" Binding="{Binding Expression}" Width="*"/>

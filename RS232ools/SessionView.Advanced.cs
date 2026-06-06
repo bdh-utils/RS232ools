@@ -37,9 +37,15 @@ namespace RS232ools
 
             // Starter rules that show capture + transform.
             _rules.Add(new ResponderRule { Name = "ping", Pattern = "PING", Response = "PONG" });
+
             var scale = new ResponderRule { Name = "scale", Pattern = "READ {raw}", Response = "VAL={scaled}" };
             scale.Variables.Add(new DerivedVariable { Name = "scaled", Expression = "raw * 0.1" });
             _rules.Add(scale);
+
+            // String example: RX "abcde[req]123" -> TX "abcde[res]123".
+            var reqres = new ResponderRule { Name = "reqres", Pattern = "abcde[{tag}]123", Response = "abcde[{out}]123" };
+            reqres.Variables.Add(new DerivedVariable { Name = "out", Expression = "replace(tag, \"req\", \"res\")" });
+            _rules.Add(reqres);
 
             AdvRulesGrid.ItemsSource = _rules;
 

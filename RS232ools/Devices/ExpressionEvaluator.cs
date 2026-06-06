@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 
 namespace RS232ools.Devices
 {
@@ -11,43 +12,61 @@ namespace RS232ools.Devices
     }
 
     /// <summary>
-    /// Evaluates arithmetic and boolean expressions over a set of numeric
-    /// variables. Booleans are represented as 1 (true) / 0 (false); any non-zero
-    /// operand counts as true.
+    /// Evaluates arithmetic, boolean and string expressions over a set of
+    /// variables. Values are numbers or strings (see <see cref="ExprValue"/>);
+    /// booleans are numbers 1 (true) / 0 (false) and any non-zero number or
+    /// non-empty string counts as true.
     ///
     /// Supported, lowest to highest precedence:
     ///   ternary   cond ? a : b
     ///   logical   ||  &amp;&amp;
-    ///   equality  ==  !=
-    ///   compare   &lt;  &lt;=  &gt;  &gt;=
-    ///   additive  +  -
+    ///   equality  ==  !=        (numeric if both sides are numbers, else textual)
+    ///   compare   &lt;  &lt;=  &gt;  &gt;=   (numeric)
+    ///   additive  +  -          (+ adds two numbers, otherwise concatenates)
     ///   multipl.  *  /  %
     ///   unary     -  +  !
-    ///   primary   number, variable, true, false, ( ... )
+    ///   primary   number, "string", variable, true, false, name(args...), ( ... )
+    ///
+    /// String functions: contains, startsWith, endsWith, indexOf, replace,
+    /// substring, upper, lower, trim, len, concat, padLeft, padRight, str.
+    /// Numeric functions: abs, round, floor, ceil, min, max, number.
     ///
     /// Throws <see cref="ExpressionException"/> on any syntax or evaluation error.
     /// </summary>
     public static class ExpressionEvaluator
     {
-        private static readonly IReadOnlyDictionary<string, double> NoVars =
-            new Dictionary<string, double>();
-
+        /// <summary>Numeric convenience overload (used where only numbers apply).</summary>
         public static double Evaluate(string expression, IReadOnlyDictionary<string, double>? variables = null)
         {
+            IReadOnlyDictionary<string, ExprValue>? vars = null;
+            if (variables is not null)
+            {
+                var map = new Dictionary<string, ExprValue>(variables.Count);
+                foreach (var kv in variables) map[kv.Key] = ExprValue.Number(kv.Value);
+                vars = map;
+            }
+            return EvaluateValue(expression, vars).AsNumber();
+        }
+
+        /// <summary>Evaluates an expression to a number-or-string value.</summary>
+        public static ExprValue EvaluateValue(string expression, IReadOnlyDictionary<string, ExprValue>? variables = null)
+        {
             if (expression is null) throw new ExpressionException("Expression is null.");
-            var parser = new Parser(expression, variables ?? NoVars);
-            double result = parser.ParseExpression();
+            var parser = new Parser(expression, variables ?? Empty);
+            ExprValue result = parser.ParseExpression();
             parser.ExpectEnd();
             return result;
         }
 
+        private static readonly IReadOnlyDictionary<string, ExprValue> Empty = new Dictionary<string, ExprValue>();
+
         private sealed class Parser
         {
             private readonly string _s;
-            private readonly IReadOnlyDictionary<string, double> _vars;
+            private readonly IReadOnlyDictionary<string, ExprValue> _vars;
             private int _pos;
 
-            public Parser(string s, IReadOnlyDictionary<string, double> vars)
+            public Parser(string s, IReadOnlyDictionary<string, ExprValue> vars)
             {
                 _s = s;
                 _vars = vars;
@@ -80,107 +99,94 @@ namespace RS232ools.Devices
             public void ExpectEnd()
             {
                 SkipWs();
-                if (_pos < _s.Length)
-                {
-                    throw new ExpressionException($"Unexpected '{_s.Substring(_pos)}'.");
-                }
+                if (_pos < _s.Length) throw new ExpressionException($"Unexpected '{_s.Substring(_pos)}'.");
             }
 
             // ---- grammar ----
 
-            public double ParseExpression() => ParseTernary();
+            public ExprValue ParseExpression() => ParseTernary();
 
-            private double ParseTernary()
+            private ExprValue ParseTernary()
             {
-                double cond = ParseOr();
+                ExprValue cond = ParseOr();
                 if (Match("?"))
                 {
-                    double whenTrue = ParseTernary();
+                    ExprValue whenTrue = ParseTernary();
                     if (!Match(":")) throw new ExpressionException("Expected ':' in '?:' expression.");
-                    double whenFalse = ParseTernary();
-                    return cond != 0 ? whenTrue : whenFalse;
+                    ExprValue whenFalse = ParseTernary();
+                    return cond.IsTruthy() ? whenTrue : whenFalse;
                 }
                 return cond;
             }
 
-            private double ParseOr()
+            private ExprValue ParseOr()
             {
-                double left = ParseAnd();
+                ExprValue left = ParseAnd();
                 while (Match("||"))
                 {
-                    double right = ParseAnd();
-                    left = (left != 0 || right != 0) ? 1 : 0;
+                    ExprValue right = ParseAnd();
+                    left = Bool(left.IsTruthy() || right.IsTruthy());
                 }
                 return left;
             }
 
-            private double ParseAnd()
+            private ExprValue ParseAnd()
             {
-                double left = ParseEquality();
+                ExprValue left = ParseEquality();
                 while (Match("&&"))
                 {
-                    double right = ParseEquality();
-                    left = (left != 0 && right != 0) ? 1 : 0;
+                    ExprValue right = ParseEquality();
+                    left = Bool(left.IsTruthy() && right.IsTruthy());
                 }
                 return left;
             }
 
-            private double ParseEquality()
+            private ExprValue ParseEquality()
             {
-                double left = ParseComparison();
+                ExprValue left = ParseComparison();
                 while (true)
                 {
-                    if (Match("==")) left = left == ParseComparison() ? 1 : 0;
-                    else if (Match("!=")) left = left != ParseComparison() ? 1 : 0;
+                    if (Match("==")) left = Bool(AreEqual(left, ParseComparison()));
+                    else if (Match("!=")) left = Bool(!AreEqual(left, ParseComparison()));
                     else return left;
                 }
             }
 
-            private double ParseComparison()
+            private static bool AreEqual(ExprValue a, ExprValue b)
             {
-                double left = ParseAdditive();
+                if (a.TryAsNumber(out double x) && b.TryAsNumber(out double y)) return x == y;
+                return string.Equals(a.AsText(), b.AsText(), StringComparison.Ordinal);
+            }
+
+            private ExprValue ParseComparison()
+            {
+                ExprValue left = ParseAdditive();
                 while (true)
                 {
-                    // Longer operators first so "<=" is not read as "<".
-                    if (Match("<=")) left = left <= ParseAdditive() ? 1 : 0;
-                    else if (Match(">=")) left = left >= ParseAdditive() ? 1 : 0;
-                    else if (Match("<")) left = left < ParseAdditive() ? 1 : 0;
-                    else if (Match(">")) left = left > ParseAdditive() ? 1 : 0;
+                    if (Match("<=")) left = Bool(left.AsNumber() <= ParseAdditive().AsNumber());
+                    else if (Match(">=")) left = Bool(left.AsNumber() >= ParseAdditive().AsNumber());
+                    else if (Match("<")) left = Bool(left.AsNumber() < ParseAdditive().AsNumber());
+                    else if (Match(">")) left = Bool(left.AsNumber() > ParseAdditive().AsNumber());
                     else return left;
                 }
             }
 
-            private double ParseAdditive()
+            private ExprValue ParseAdditive()
             {
-                double left = ParseMultiplicative();
+                ExprValue left = ParseMultiplicative();
                 while (true)
                 {
-                    if (Match("+")) left += ParseMultiplicative();
-                    else if (Match("-")) left -= ParseMultiplicative();
-                    else return left;
-                }
-            }
-
-            private double ParseMultiplicative()
-            {
-                double left = ParseUnary();
-                while (true)
-                {
-                    if (Match("*"))
+                    if (Match("+"))
                     {
-                        left *= ParseUnary();
+                        ExprValue right = ParseMultiplicative();
+                        // Add when both sides are numbers; otherwise concatenate.
+                        left = left.TryAsNumber(out double a) && right.TryAsNumber(out double b)
+                            ? ExprValue.Number(a + b)
+                            : ExprValue.Text(left.AsText() + right.AsText());
                     }
-                    else if (Match("/"))
+                    else if (Match("-"))
                     {
-                        double right = ParseUnary();
-                        if (right == 0) throw new ExpressionException("Division by zero.");
-                        left /= right;
-                    }
-                    else if (Match("%"))
-                    {
-                        double right = ParseUnary();
-                        if (right == 0) throw new ExpressionException("Modulo by zero.");
-                        left %= right;
+                        left = ExprValue.Number(left.AsNumber() - ParseMultiplicative().AsNumber());
                     }
                     else
                     {
@@ -189,26 +195,55 @@ namespace RS232ools.Devices
                 }
             }
 
-            private double ParseUnary()
+            private ExprValue ParseMultiplicative()
             {
-                if (Match("!")) return ParseUnary() == 0 ? 1 : 0;
-                if (Match("-")) return -ParseUnary();
+                ExprValue left = ParseUnary();
+                while (true)
+                {
+                    if (Match("*"))
+                    {
+                        left = ExprValue.Number(left.AsNumber() * ParseUnary().AsNumber());
+                    }
+                    else if (Match("/"))
+                    {
+                        double right = ParseUnary().AsNumber();
+                        if (right == 0) throw new ExpressionException("Division by zero.");
+                        left = ExprValue.Number(left.AsNumber() / right);
+                    }
+                    else if (Match("%"))
+                    {
+                        double right = ParseUnary().AsNumber();
+                        if (right == 0) throw new ExpressionException("Modulo by zero.");
+                        left = ExprValue.Number(left.AsNumber() % right);
+                    }
+                    else
+                    {
+                        return left;
+                    }
+                }
+            }
+
+            private ExprValue ParseUnary()
+            {
+                if (Match("!")) return Bool(!ParseUnary().IsTruthy());
+                if (Match("-")) return ExprValue.Number(-ParseUnary().AsNumber());
                 if (Match("+")) return ParseUnary();
                 return ParsePrimary();
             }
 
-            private double ParsePrimary()
+            private ExprValue ParsePrimary()
             {
                 if (Match("("))
                 {
-                    double value = ParseExpression();
+                    ExprValue value = ParseExpression();
                     if (!Match(")")) throw new ExpressionException("Expected ')'.");
                     return value;
                 }
 
                 char c = Peek;
-                if (char.IsDigit(c) || c == '.') return ParseNumber();
-                if (char.IsLetter(c) || c == '_') return ParseIdentifier();
+                if (c == '"' || c == '\'') return ExprValue.Text(ParseStringLiteral());
+                if (char.IsDigit(c) || c == '.') return ExprValue.Number(ParseNumber());
+                if (char.IsLetter(c) || c == '_') return ParseIdentifierOrCall();
                 if (c == '\0') throw new ExpressionException("Unexpected end of expression.");
                 throw new ExpressionException($"Unexpected character '{c}'.");
             }
@@ -226,18 +261,156 @@ namespace RS232ools.Devices
                 return value;
             }
 
-            private double ParseIdentifier()
+            private string ParseStringLiteral()
+            {
+                SkipWs();
+                char quote = _s[_pos++];
+                var sb = new StringBuilder();
+                while (_pos < _s.Length)
+                {
+                    char ch = _s[_pos++];
+                    if (ch == quote) return sb.ToString();
+                    if (ch == '\\' && _pos < _s.Length)
+                    {
+                        char esc = _s[_pos++];
+                        sb.Append(esc switch
+                        {
+                            'n' => '\n',
+                            'r' => '\r',
+                            't' => '\t',
+                            _ => esc, // \\  \"  \'  and anything else: literal
+                        });
+                    }
+                    else
+                    {
+                        sb.Append(ch);
+                    }
+                }
+                throw new ExpressionException("Unterminated string literal.");
+            }
+
+            private ExprValue ParseIdentifierOrCall()
             {
                 SkipWs();
                 int start = _pos;
                 while (_pos < _s.Length && (char.IsLetterOrDigit(_s[_pos]) || _s[_pos] == '_')) _pos++;
                 string name = _s.Substring(start, _pos - start);
 
-                if (name == "true") return 1;
-                if (name == "false") return 0;
-                if (_vars.TryGetValue(name, out double value)) return value;
+                if (Peek == '(') return CallFunction(name);
+
+                if (name == "true") return ExprValue.Number(1);
+                if (name == "false") return ExprValue.Number(0);
+                if (_vars.TryGetValue(name, out ExprValue value)) return value;
                 throw new ExpressionException($"Unknown variable '{name}'.");
             }
+
+            private ExprValue CallFunction(string name)
+            {
+                Match("("); // consume '('
+                var args = new List<ExprValue>();
+                if (Peek != ')')
+                {
+                    do { args.Add(ParseExpression()); } while (Match(","));
+                }
+                if (!Match(")")) throw new ExpressionException($"Expected ')' after arguments to '{name}'.");
+                return Functions.Call(name, args);
+            }
+
+            private static ExprValue Bool(bool b) => ExprValue.Number(b ? 1 : 0);
+        }
+
+        // ---- function library ---------------------------------------------
+
+        private static class Functions
+        {
+            public static ExprValue Call(string name, List<ExprValue> a)
+            {
+                switch (name.ToLowerInvariant())
+                {
+                    case "len": Need(name, a, 1); return ExprValue.Number(a[0].AsText().Length);
+                    case "upper": Need(name, a, 1); return ExprValue.Text(a[0].AsText().ToUpperInvariant());
+                    case "lower": Need(name, a, 1); return ExprValue.Text(a[0].AsText().ToLowerInvariant());
+                    case "trim": Need(name, a, 1); return ExprValue.Text(a[0].AsText().Trim());
+                    case "str": Need(name, a, 1); return ExprValue.Text(a[0].AsText());
+                    case "number": Need(name, a, 1); return ExprValue.Number(a[0].AsNumber());
+
+                    case "contains": Need(name, a, 2);
+                        return Bool(a[0].AsText().Contains(a[1].AsText(), StringComparison.Ordinal));
+                    case "startswith": Need(name, a, 2);
+                        return Bool(a[0].AsText().StartsWith(a[1].AsText(), StringComparison.Ordinal));
+                    case "endswith": Need(name, a, 2);
+                        return Bool(a[0].AsText().EndsWith(a[1].AsText(), StringComparison.Ordinal));
+                    case "indexof": Need(name, a, 2);
+                        return ExprValue.Number(a[0].AsText().IndexOf(a[1].AsText(), StringComparison.Ordinal));
+
+                    case "replace": Need(name, a, 3);
+                        return ExprValue.Text(a[0].AsText().Replace(a[1].AsText(), a[2].AsText()));
+
+                    case "substring": return Substring(name, a);
+                    case "concat": NeedAtLeast(name, a, 1); return Concat(a);
+                    case "padleft": return Pad(name, a, left: true);
+                    case "padright": return Pad(name, a, left: false);
+
+                    case "abs": Need(name, a, 1); return ExprValue.Number(Math.Abs(a[0].AsNumber()));
+                    case "floor": Need(name, a, 1); return ExprValue.Number(Math.Floor(a[0].AsNumber()));
+                    case "ceil": Need(name, a, 1); return ExprValue.Number(Math.Ceiling(a[0].AsNumber()));
+                    case "round": return Round(name, a);
+                    case "min": Need(name, a, 2); return ExprValue.Number(Math.Min(a[0].AsNumber(), a[1].AsNumber()));
+                    case "max": Need(name, a, 2); return ExprValue.Number(Math.Max(a[0].AsNumber(), a[1].AsNumber()));
+
+                    default: throw new ExpressionException($"Unknown function '{name}'.");
+                }
+            }
+
+            private static ExprValue Substring(string name, List<ExprValue> a)
+            {
+                if (a.Count is not (2 or 3)) throw new ExpressionException($"{name} takes 2 or 3 arguments.");
+                string s = a[0].AsText();
+                int start = Math.Clamp((int)a[1].AsNumber(), 0, s.Length);
+                if (a.Count == 3)
+                {
+                    int length = Math.Clamp((int)a[2].AsNumber(), 0, s.Length - start);
+                    return ExprValue.Text(s.Substring(start, length));
+                }
+                return ExprValue.Text(s.Substring(start));
+            }
+
+            private static ExprValue Concat(List<ExprValue> a)
+            {
+                var sb = new StringBuilder();
+                foreach (var v in a) sb.Append(v.AsText());
+                return ExprValue.Text(sb.ToString());
+            }
+
+            private static ExprValue Pad(string name, List<ExprValue> a, bool left)
+            {
+                if (a.Count is not (2 or 3)) throw new ExpressionException($"{name} takes 2 or 3 arguments.");
+                string s = a[0].AsText();
+                int width = (int)a[1].AsNumber();
+                char pad = a.Count == 3 && a[2].AsText().Length > 0 ? a[2].AsText()[0] : ' ';
+                return ExprValue.Text(left ? s.PadLeft(width, pad) : s.PadRight(width, pad));
+            }
+
+            private static ExprValue Round(string name, List<ExprValue> a)
+            {
+                if (a.Count is not (1 or 2)) throw new ExpressionException($"{name} takes 1 or 2 arguments.");
+                int digits = a.Count == 2 ? Math.Clamp((int)a[1].AsNumber(), 0, 15) : 0;
+                return ExprValue.Number(Math.Round(a[0].AsNumber(), digits));
+            }
+
+            private static void Need(string name, List<ExprValue> a, int count)
+            {
+                if (a.Count != count)
+                    throw new ExpressionException($"{name} takes {count} argument(s), got {a.Count}.");
+            }
+
+            private static void NeedAtLeast(string name, List<ExprValue> a, int count)
+            {
+                if (a.Count < count)
+                    throw new ExpressionException($"{name} takes at least {count} argument(s).");
+            }
+
+            private static ExprValue Bool(bool b) => ExprValue.Number(b ? 1 : 0);
         }
     }
 }
