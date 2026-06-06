@@ -337,6 +337,10 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <CheckBox Grid.Column="0" x:Name="AdvAutoRespondCheck" Content="Auto-respond"
                           VerticalAlignment="Center" IsEnabled="False"
@@ -344,7 +348,11 @@
                           ToolTip="When connected, reply automatically to incoming lines that match a rule."/>
                 <TextBlock Grid.Column="2" Text="Reply ending" Style="{StaticResource Label}" VerticalAlignment="Center"/>
                 <ComboBox Grid.Column="4" x:Name="AdvReplyEndingCombo" Width="120" VerticalAlignment="Center"/>
-                <Button Grid.Column="6" x:Name="AdvClearLogButton" Content="Clear log" MinWidth="90"
+                <Button Grid.Column="6" x:Name="AdvSaveConfigButton" Content="Save config…" MinWidth="100"
+                        Click="AdvSaveConfig_Click"/>
+                <Button Grid.Column="8" x:Name="AdvLoadConfigButton" Content="Load config…" MinWidth="100"
+                        Click="AdvLoadConfig_Click"/>
+                <Button Grid.Column="10" x:Name="AdvClearLogButton" Content="Clear log" MinWidth="90"
                         Click="AdvClearLog_Click"/>
             </Grid>
 

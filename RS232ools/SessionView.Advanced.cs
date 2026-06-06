@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Win32;
 using RS232ools.Devices;
 using RS232ools.Serial;
 
@@ -132,6 +136,83 @@ namespace RS232ools
             {
                 // No active edit; nothing to do.
             }
+        }
+
+        // ---- Save / load config -------------------------------------------
+
+        private void AdvSaveConfig_Click(object sender, RoutedEventArgs e)
+        {
+            CommitRuleEdits();
+
+            var config = new AdvancedConfig
+            {
+                ReplyLineEnding = ReplyLineEnding(),
+                Rules = new List<ResponderRule>(_rules),
+            };
+
+            var dialog = new SaveFileDialog
+            {
+                Title = "Save advanced configuration",
+                Filter = "Advanced config (*.json)|*.json|All files (*.*)|*.*",
+                FileName = "rs232-advanced-config.json",
+                DefaultExt = ".json",
+            };
+            if (dialog.ShowDialog(OwnerWindow) != true) return;
+
+            try
+            {
+                File.WriteAllText(dialog.FileName, AdvancedConfigCodec.Serialize(config));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                MessageBox.Show(OwnerWindow, $"Could not save the configuration: {ex.Message}", "Save config",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void AdvLoadConfig_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Load advanced configuration",
+                Filter = "Advanced config (*.json)|*.json|All files (*.*)|*.*",
+            };
+            if (dialog.ShowDialog(OwnerWindow) != true) return;
+
+            AdvancedConfig config;
+            try
+            {
+                config = AdvancedConfigCodec.Deserialize(File.ReadAllText(dialog.FileName));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException)
+            {
+                MessageBox.Show(OwnerWindow, $"Could not load the configuration: {ex.Message}", "Load config",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            ApplyAdvancedConfig(config);
+        }
+
+        private void ApplyAdvancedConfig(AdvancedConfig config)
+        {
+            // Stop responding while the rule set is swapped out.
+            AdvAutoRespondCheck.IsChecked = false;
+            _responderActive = false;
+            _responderRxBuffer.Clear();
+
+            _rules.Clear();
+            foreach (var rule in config.Rules)
+            {
+                if (rule is not null) _rules.Add(rule);
+            }
+
+            // Restore the reply ending by matching its value.
+            AdvReplyEndingCombo.SelectedItem =
+                LineEndings.FirstOrDefault(o => o.Value == config.ReplyLineEnding) ?? LineEndings[3];
+
+            AdvVarsGrid.ItemsSource = null;
+            UpdateVariableEditorState();
         }
 
         // ---- Incoming -> match -> reply -----------------------------------
