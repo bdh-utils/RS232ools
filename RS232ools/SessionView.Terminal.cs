@@ -23,7 +23,7 @@ namespace RS232ools
     /// <see cref="MonitorFormatter"/>; this partial only renders its segments and
     /// wires up the mode selector.
     /// </summary>
-    public partial class MainWindow
+    public partial class SessionView
     {
         private enum TerminalDisplayMode { ReceivedOnly, Monitor }
 

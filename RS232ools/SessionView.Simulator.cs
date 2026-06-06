@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
@@ -22,7 +22,7 @@ namespace RS232ools
     /// and value logic lives in the WPF-free <see cref="Simulation"/> layer; this
     /// partial just wires it to the controls and the shared serial service.
     /// </summary>
-    public partial class MainWindow
+    public partial class SessionView
     {
         private readonly ObservableCollection<FieldDefinition> _simFields = new();
         private readonly MessageFormat _simFormat = new();
@@ -168,7 +168,7 @@ namespace RS232ools
                 FileName = "rs232-sim-config.json",
                 DefaultExt = ".json",
             };
-            if (dialog.ShowDialog(this) != true) return;
+            if (dialog.ShowDialog(OwnerWindow) != true) return;
 
             try
             {
@@ -176,7 +176,7 @@ namespace RS232ools
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                MessageBox.Show(this, $"Could not save the configuration: {ex.Message}", "Save config",
+                MessageBox.Show(OwnerWindow, $"Could not save the configuration: {ex.Message}", "Save config",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -188,7 +188,7 @@ namespace RS232ools
                 Title = "Load simulator configuration",
                 Filter = "Simulator config (*.json)|*.json|All files (*.*)|*.*",
             };
-            if (dialog.ShowDialog(this) != true) return;
+            if (dialog.ShowDialog(OwnerWindow) != true) return;
 
             SimulatorConfig config;
             try
@@ -197,7 +197,7 @@ namespace RS232ools
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException)
             {
-                MessageBox.Show(this, $"Could not load the configuration: {ex.Message}", "Load config",
+                MessageBox.Show(OwnerWindow, $"Could not load the configuration: {ex.Message}", "Load config",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
@@ -267,7 +267,7 @@ namespace RS232ools
             catch (Exception ex)
             {
                 StopStreaming();
-                MessageBox.Show(this, $"Could not generate a message: {ex.Message}", "Simulator",
+                MessageBox.Show(OwnerWindow, $"Could not generate a message: {ex.Message}", "Simulator",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
@@ -438,9 +438,9 @@ namespace RS232ools
                 {
                     row[checksumColumn] = parsed.ChecksumValid switch
                     {
-                        true => "✓",   // check mark
-                        false => "✗",  // ballot x
-                        null => "—",   // em dash (not present)
+                        true => "âœ“",   // check mark
+                        false => "âœ—",  // ballot x
+                        null => "â€”",   // em dash (not present)
                     };
                 }
             }

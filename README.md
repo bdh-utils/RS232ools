@@ -6,9 +6,28 @@ strings.
 
 ## What it does
 
-RS232ools is organised into two tabs that share a single serial connection:
-**Terminal** and **Simulator**. Connect once and use either tab — or both at
-the same time.
+RS232ools works with **multiple serial sessions at once**. Each session lives in
+its own tab, owns its own COM port and serial settings, and contains a
+**Terminal** and a **Simulator** that share that session's connection. So you can
+drive several ports side by side in one window — for example, a terminal on one
+device and a simulator feeding another.
+
+### Session tabs
+
+Each tab across the top of the window is an independent serial **session**.
+Inside a session you set the COM port and framing, connect, and use its Terminal
+and Simulator sub-tabs — exactly as described below — against that session's own
+port.
+
+- **New tab** (in the title bar) opens another session, so you can connect to a
+  different COM port without closing the first. Each session connects,
+  disconnects, sends, receives, and logs entirely independently of the others.
+- **Rename** a tab by double-clicking its label; press Enter to confirm or Esc to
+  cancel. Until you rename it, a tab is named automatically after its selected
+  port (e.g. `COM3`).
+- **Close** a tab with the **×** on its label. Closing a session disconnects its
+  port and stops any streaming or logging it was doing. The window always keeps at
+  least one session open.
 
 ### Terminal
 
@@ -168,11 +187,14 @@ RS232ools\bin\Debug\net8.0-windows\RS232ools.exe
    alongside any responses.
 7. To capture incoming data, tick **Log to file** and choose a destination path.
 8. Click **Disconnect** when done.
+9. To work with another port at the same time, click **New tab** in the title bar
+   and repeat — each tab is an independent session. Double-click a tab to rename
+   it, or click its **×** to close it.
 
 **Typical Simulator workflow**
 
-1. Connect to a port as above (the Simulator tab shares the same connection).
-2. Switch to the **Simulator** tab.
+1. Connect to a port as above (the Simulator shares its session's connection).
+2. Switch to the **Simulator** sub-tab.
 3. Choose a format (CSV, NMEA, Plain, or Hex) and configure the field list.
 4. Click **Preview** to check the output, then **Generate & send** to transmit
    one message, or tick **Stream every** and set an interval to transmit

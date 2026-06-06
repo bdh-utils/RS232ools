@@ -1,0 +1,25 @@
+<UserControl x:Class="RS232ools.SessionTabHeader"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Background="Transparent">
+    <!-- A session tab's header: an editable name plus a close button. The name
+         starts auto-derived from the port; double-click to rename it. -->
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <Grid VerticalAlignment="Center">
+            <TextBlock x:Name="TitleText" VerticalAlignment="Center"
+                       MouseLeftButtonDown="TitleText_MouseLeftButtonDown"
+                       ToolTip="Double-click to rename"/>
+            <TextBox x:Name="EditBox" VerticalAlignment="Center" Visibility="Collapsed"
+                     MinWidth="60" Padding="2,0" Foreground="{StaticResource BrandBg}"
+                     Background="White" BorderThickness="0"
+                     KeyDown="EditBox_KeyDown" LostFocus="EditBox_LostFocus"/>
+        </Grid>
+        <Button x:Name="CloseButton" Content="&#xE8BB;" FontFamily="Segoe MDL2 Assets"
+                FontSize="9" Width="18" Height="18" Margin="8,0,0,0" Padding="0"
+                Background="Transparent" Cursor="Hand" ToolTip="Close tab"
+                Click="CloseButton_Click"/>
+    </StackPanel>
+</UserControl>
